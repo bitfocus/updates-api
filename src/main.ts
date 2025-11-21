@@ -1,8 +1,11 @@
-import { APIServer, ValidationError, z } from "@bitfocusas/api";
+// Setup sentry before anything else
+import "./instrument.mjs";
+
+import { APIServer } from "@bitfocusas/api";
 import { registerUpdateRoutes } from "./update.js";
 import { PrismaClient } from "./prisma/client.js";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { createPool } from "mysql2/promise";
+import * as Sentry from "@sentry/node";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -24,6 +27,9 @@ const app = new APIServer({
   loadEnv: false,
   metricsEnabled: true, // TODO - limit permissions of this?
 });
+
+// Setup Sentry error handler for Fastify
+Sentry.setupFastifyErrorHandler(app.instance);
 
 // Register routes
 registerUpdateRoutes(app, prisma);

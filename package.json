@@ -13,6 +13,7 @@
     "@bitfocusas/api": "^1.1.4",
     "@prisma/adapter-mariadb": "^7.0.0",
     "@prisma/client": "^7.0.0",
+    "@sentry/node": "^10.26.0",
     "debug": "^4.4.3",
     "openapi-fetch": "^0.15.0",
     "semver": "^7.7.3",
