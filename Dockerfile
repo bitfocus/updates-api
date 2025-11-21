@@ -17,6 +17,7 @@ RUN yarn install --immutable
 COPY tsconfig.json ./
 COPY prisma ./prisma
 COPY src ./src
+COPY tools ./tools
 
 # Build application (generates Prisma Client and compiles TypeScript)
 RUN yarn build:openapi
