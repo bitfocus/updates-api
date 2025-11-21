@@ -1,6 +1,6 @@
 # Stage 1: Build
 FROM node:24-alpine AS builder
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata bash
 WORKDIR /app
 
 # Enable corepack for yarn
