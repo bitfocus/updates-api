@@ -41,6 +41,13 @@ export function registerUpdateRoutes(
         console.error("Error updating user in database:", error);
       });
 
+      if (request.headers["FROM-OLD-SERVER"]) {
+        // This is from the old server, so we can skip the actual update check
+        return {
+          message: "",
+        };
+      }
+
       try {
         // Future: should this scrape github releases instead?
         // For now, use Bitfocus API to get product metadata
