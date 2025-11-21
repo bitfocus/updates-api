@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx --env-file .env --watch src/main.ts",
     "build": "run db:generate && tsc -p tsconfig.json",
+    "build:openapi": "node ./tools/generate_openapi.mjs",
     "db:generate": "prisma generate",
     "db:push": "prisma db push"
   },
@@ -13,14 +14,19 @@
     "@prisma/adapter-mariadb": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "debug": "^4.4.3",
+    "openapi-fetch": "^0.15.0",
+    "semver": "^7.7.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
     "@types/debug": "^4",
     "@types/node": "^24.10.1",
+    "@types/semver": "^7",
+    "openapi-typescript": "^7.10.1",
     "prisma": "^7.0.0",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "zx": "^8.8.5"
   }
 }
