@@ -8,7 +8,7 @@ RUN corepack enable
 
 # Copy package files
 COPY package.json yarn.lock .yarnrc.yml ./
-# COPY .yarn ./.yarn
+COPY .yarn ./.yarn
 
 # Install dependencies
 RUN yarn install --immutable
@@ -33,7 +33,7 @@ RUN corepack enable
 
 # Copy package files for production dependencies
 COPY package.json yarn.lock .yarnrc.yml ./
-# COPY .yarn ./.yarn
+COPY .yarn ./.yarn
 
 # Install production dependencies only
 RUN yarn workspaces focus --production
