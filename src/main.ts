@@ -26,6 +26,8 @@ const app = new APIServer({
   // apiTags: [{ name: "Users", description: "User management endpoints" }],
   loadEnv: false,
   metricsEnabled: true, // TODO - limit permissions of this?
+  rateLimitAllow: process.env.RATE_LIMIT_ALLOW?.split(","),
+  trustProxy: process.env.TRUST_PROXY,
 });
 
 // Setup Sentry error handler for Fastify

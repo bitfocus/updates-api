@@ -1,0 +1,49 @@
+diff --git a/dist/api-server.d.ts b/dist/api-server.d.ts
+index aa39450cf83caf2694623f1d191e70520a2ab196..7a6b1c54f064808c476207810c5c493d92c3a5da 100644
+--- a/dist/api-server.d.ts
++++ b/dist/api-server.d.ts
+@@ -12,9 +12,11 @@ export interface APIServerConfig<TAuthContext = unknown> {
+     env?: 'development' | 'production';
+     logLevel?: 'debug' | 'info' | 'warn' | 'error';
+     corsOrigin?: string;
++    trustProxy?: string;
+     apiToken?: string | ApiTokenValidator<TAuthContext>;
+     rateLimitMax?: number;
+     rateLimitWindow?: string;
++    rateLimitAllow?: string[];
+     metricsEnabled?: boolean;
+     apiTitle?: string;
+     apiDescription?: string;
+diff --git a/dist/api-server.js b/dist/api-server.js
+index 63d53dd199cff64f36d874a8171d19442f3b6d6c..715ab67e16ca2dd3427540f4e13198f4bb6257c6 100644
+--- a/dist/api-server.js
++++ b/dist/api-server.js
+@@ -40,9 +40,11 @@ class APIServer {
+             env: (config.env ?? process.env.NODE_ENV ?? 'development'),
+             logLevel: (config.logLevel ?? process.env.LOG_LEVEL ?? 'info'),
+             corsOrigin: config.corsOrigin ?? process.env.CORS_ORIGIN ?? '*',
++            trustProxy: config.trustProxy ?? false,
+             apiToken: config.apiToken ?? process.env.API_TOKEN ?? 'development-token-change-in-production',
+             rateLimitMax: config.rateLimitMax ?? parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+             rateLimitWindow: config.rateLimitWindow ?? process.env.RATE_LIMIT_WINDOW ?? '15m',
++            rateLimitAllow: config.rateLimitAllow ?? [],
+             metricsEnabled: config.metricsEnabled ?? (process.env.METRICS_ENABLED !== 'false'),
+             apiTitle: config.apiTitle ?? 'API Documentation',
+             apiDescription: config.apiDescription ?? 'API built with Fastify, Zod, and TypeScript',
+@@ -76,6 +78,7 @@ class APIServer {
+                     keywords: ['kind', 'modifier'],
+                 },
+             },
++            trustProxy: this.config.trustProxy,
+         });
+         this.fastify.setValidatorCompiler(fastify_type_provider_zod_1.validatorCompiler);
+         this.fastify.setSerializerCompiler(fastify_type_provider_zod_1.serializerCompiler);
+@@ -89,7 +92,7 @@ class APIServer {
+             max: this.config.rateLimitMax,
+             timeWindow: this.config.rateLimitWindow,
+             cache: 10000,
+-            allowList: ['127.0.0.1'],
++            allowList: ['127.0.0.1', ...this.config.rateLimitAllow],
+             redis: undefined,
+             skipOnError: true,
+             nameSpace: 'faz:',
