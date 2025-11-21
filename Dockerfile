@@ -32,15 +32,13 @@ RUN corepack enable
 
 # Copy package files for production dependencies
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn ./.yarn
+# COPY .yarn ./.yarn
 
 # Install production dependencies only
 RUN yarn workspaces focus --production
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy prisma schema for runtime
 COPY prisma ./prisma
