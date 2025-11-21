@@ -17,3 +17,6 @@ node_modules
 .pnp.*
 
 /dist
+
+/src/prisma
+/.env
