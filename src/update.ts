@@ -1,106 +1,81 @@
 import { ValidationError, z, type APIServer } from "@bitfocusas/api";
-import type { PrismaClient } from "./prisma/client.js";
+import { PrismaClient } from "./prisma/client.js";
+import Debug from "debug";
 
-// In-memory data store
-const users: Array<{
-  id: string;
-  name: string;
-  email: string;
-  age?: number;
-  createdAt: string;
-}> = [];
+const UpdatesBody = z.object({
+  id: z.string().describe("Unique identifier for the installation"),
+  app: z.object({
+    name: z.string().describe("Name of the application"),
+    version: z.string().describe("Current version of the application"),
+    build: z.string().describe("Full build number or identifier"),
+  }),
+  os: z.object({
+    platform: z.string().describe("Operating system platform"),
+    arch: z.string().describe("System architecture"),
+    release: z.string().describe("OS release version"),
+  }),
+});
+
+const UpdatesResponse = z.object({
+  message: z.string().describe("Update message"),
+  link: z.string().url().optional().describe("Download URL"),
+});
 
 export function registerUpdateRoutes(
   app: APIServer,
   prisma: PrismaClient
 ): void {
-  // Define schemas with .describe() for better OpenAPI documentation
-  const CreateUserBody = z.object({
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(100, "Name must be less than 100 characters")
-      .describe("Full name of the user"),
-    email: z
-      .string()
-      .email("Invalid email address")
-      .describe("Email address (must be unique)"),
-    age: z
-      .number()
-      .int()
-      .positive("Age must be a positive number")
-      .optional()
-      .describe("Age in years (optional)"),
-  });
-
-  const UserResponse = z.object({
-    id: z.string().describe("Unique user identifier (UUID)"),
-    name: z.string().describe("Full name of the user"),
-    email: z.string().describe("Email address"),
-    age: z.number().optional().describe("Age in years"),
-    createdAt: z
-      .string()
-      .describe("ISO 8601 timestamp of when the user was created"),
-  });
-
-  // Create user endpoint
   app.createEndpoint({
     method: "POST",
-    url: "/users",
-    body: CreateUserBody,
-    response: UserResponse,
+    url: "/updates",
+    body: UpdatesBody,
+    response: UpdatesResponse,
     config: {
-      description: "Create a new user",
-      tags: ["Users"],
-      summary: "Create user",
+      description: "Check if updaes are available",
+      tags: ["Updates"],
     },
     handler: async (request) => {
-      const { name, email, age } = request.body;
+      // Defer database update to not block response
+      updateUserDb(prisma, request.body).catch((error) => {
+        console.error("Error updating user in database:", error);
+      });
 
-      // Check if email already exists
-      const existingUser = users.find((u) => u.email === email);
-      if (existingUser) {
-        throw new ValidationError([
-          {
-            field: "body.email",
-            message: "User with this email already exists",
-          },
-        ]);
-      }
-
-      // Create new user
-      const newUser = {
-        id: crypto.randomUUID(),
-        name,
-        email,
-        age,
-        createdAt: new Date().toISOString(),
+      return {
+        message: "TEST",
       };
-
-      users.push(newUser);
-
-      return newUser;
     },
   });
+}
 
-  // Get all users endpoint
-  app.createEndpoint({
-    method: "GET",
-    url: "/users",
-    response: z.object({
-      users: z.array(UserResponse),
-      total: z.number(),
-    }),
-    config: {
-      description: "Get all users",
-      tags: ["Users"],
-      summary: "List users",
+async function updateUserDb(
+  prisma: PrismaClient,
+  userInfo: z.infer<typeof UpdatesBody>
+): Promise<void> {
+  await prisma.user.upsert({
+    where: {
+      user_id_app_name: {
+        user_id: userInfo.id,
+        app_name: userInfo.app.name,
+      },
     },
-    handler: async () => {
-      return {
-        users,
-        total: users.length,
-      };
+    update: {
+      app_version: userInfo.app.version,
+      app_build: userInfo.app.build,
+
+      os_platform: userInfo.os.platform,
+      os_arch: userInfo.os.arch,
+      os_release: userInfo.os.release,
+    },
+    create: {
+      user_id: userInfo.id,
+
+      app_name: userInfo.app.name,
+      app_version: userInfo.app.version,
+      app_build: userInfo.app.build,
+
+      os_platform: userInfo.os.platform,
+      os_arch: userInfo.os.arch,
+      os_release: userInfo.os.release,
     },
   });
 }

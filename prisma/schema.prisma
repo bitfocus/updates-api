@@ -14,11 +14,13 @@ datasource db {
 }
 
 model User {
-  id String @id // companion machineid
+  id String @id @default(cuid()) @db.VarChar(25)
+
+  user_id String @db.VarChar(64) // companion user id
 
   app_name    String @db.VarChar(16) // companion/satellite etc
-  app_version String @db.VarChar(255) // companion version
-  app_build   String @db.VarChar(16) // companion build number
+  app_version String @db.VarChar(16) // companion version
+  app_build   String @db.VarChar(255) // companion build number
 
   os_platform String @db.VarChar(16) // windows/macos/linux etc
   os_release  String @db.VarChar(32) // os version
@@ -26,4 +28,9 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([user_id, app_name])
+  @@index([app_name, app_version])
 }
+
+// TODO - more index

@@ -666,10 +666,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/debug@npm:^4":
+  version: 4.1.12
+  resolution: "@types/debug@npm:4.1.12"
+  dependencies:
+    "@types/ms": "npm:*"
+  checksum: 10c0/5dcd465edbb5a7f226e9a5efd1f399c6172407ef5840686b73e3608ce135eeca54ae8037dcd9f16bdb2768ac74925b820a8b9ecc588a58ca09eca6acabe33e2f
+  languageName: node
+  linkType: hard
+
 "@types/geojson@npm:^7946.0.16":
   version: 7946.0.16
   resolution: "@types/geojson@npm:7946.0.16"
   checksum: 10c0/1ff24a288bd5860b766b073ead337d31d73bdc715e5b50a2cee5cb0af57a1ed02cc04ef295f5fa68dc40fe3e4f104dd31282b2b818a5ba3231bc1001ba084e3c
+  languageName: node
+  linkType: hard
+
+"@types/ms@npm:*":
+  version: 2.1.0
+  resolution: "@types/ms@npm:2.1.0"
+  checksum: 10c0/5ce692ffe1549e1b827d99ef8ff71187457e0eb44adbae38fdf7b9a74bae8d20642ee963c14516db1d35fa2652e65f47680fdf679dcbde52bbfadd021f497225
   languageName: node
   linkType: hard
 
@@ -927,7 +943,9 @@ __metadata:
     "@prisma/adapter-mariadb": "npm:^7.0.0"
     "@prisma/client": "npm:^7.0.0"
     "@tsconfig/node24": "npm:^24.0.3"
+    "@types/debug": "npm:^4"
     "@types/node": "npm:^24.10.1"
+    debug: "npm:^4.4.3"
     prisma: "npm:^7.0.0"
     tsx: "npm:^4.20.6"
     typescript: "npm:^5.9.3"
@@ -976,7 +994,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:4, debug@npm:^4.1.1, debug@npm:^4.3.4":
+"debug@npm:4, debug@npm:^4.1.1, debug@npm:^4.3.4, debug@npm:^4.4.3":
   version: 4.4.3
   resolution: "debug@npm:4.4.3"
   dependencies:

@@ -12,10 +12,12 @@
     "@bitfocusas/api": "^1.1.4",
     "@prisma/adapter-mariadb": "^7.0.0",
     "@prisma/client": "^7.0.0",
+    "debug": "^4.4.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
+    "@types/debug": "^4",
     "@types/node": "^24.10.1",
     "prisma": "^7.0.0",
     "tsx": "^4.20.6",
