@@ -2,8 +2,9 @@ import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
 import { BitfocusApi } from "./lib/bitfocus-api.js";
 import semver from "semver";
+import * as Sentry from "@sentry/node";
 
-const UpdatesBody = z.object({
+export const UpdatesBody = z.object({
   id: z.string().describe("Unique identifier for the installation"),
   app: z.object({
     name: z.string().describe("Name of the application"),
@@ -39,12 +40,23 @@ export function registerUpdateRoutes(
       // Defer database update to not block response
       updateUserDb(prisma, request.body).catch((error) => {
         console.error("Error updating user in database:", error);
+        Sentry.captureException(error, { extra: { userInfo: request.body } });
       });
 
       if (request.headers["FROM-OLD-SERVER"]) {
         // This is from the old server, so we can skip the actual update check
         return {
           message: "",
+        };
+      }
+
+      const currentInstalledVersionRaw = request.body.app.build;
+      const currentInstalledVersion = semver.parse(currentInstalledVersionRaw, {
+        loose: true,
+      });
+      if (!currentInstalledVersion) {
+        return {
+          message: "Unable to check updates: Invalid version format",
         };
       }
 
@@ -85,7 +97,7 @@ export function registerUpdateRoutes(
             const [_, type, _platform] = key.split(":");
             const parsedValue = JSON.parse(value);
             const build = parsedValue.version.replace(/^v/, "");
-            const version = semver.coerce(build)?.version;
+            const version = semver.coerce(build, { loose: true })?.version;
             if (!version) continue;
 
             if (type === "stable") {
@@ -110,29 +122,29 @@ export function registerUpdateRoutes(
           semver.compare(b.version, a.version)
         )[0].build;
 
-        const currentlyInstalled = request.body.app.build;
-
-        if (semver.eq(latestStableAvailable, currentlyInstalled)) {
+        if (semver.eq(latestStableAvailable, currentInstalledVersion)) {
           // running latest, no message.
           return {
             message: "",
           };
-        } else if (latestBetaAvailable === currentlyInstalled) {
+        } else if (latestBetaAvailable === currentInstalledVersionRaw) {
           return {
             message: "Remember, this is a beta version!",
             link: "https://bitfocus.io/companion?inapp_beta",
           };
-        } else if (semver.eq(latestBetaAvailable, currentlyInstalled)) {
+        } else if (semver.eq(latestBetaAvailable, currentInstalledVersion)) {
           return {
             message: "This is not the current beta version available",
             link: "https://bitfocus.io/companion?inapp_beta",
           };
-        } else if (semver.eq(latestExperimentalAvailable, currentlyInstalled)) {
+        } else if (
+          semver.eq(latestExperimentalAvailable, currentInstalledVersion)
+        ) {
           return {
             message: "EXPERIMENTAL",
             link: "https://bitfocus.io/companion?inapp_experimental",
           };
-        } else if (semver.gt(latestStableAvailable, currentlyInstalled)) {
+        } else if (semver.gt(latestStableAvailable, currentInstalledVersion)) {
           return {
             message:
               "A new stable version (" +
@@ -140,7 +152,7 @@ export function registerUpdateRoutes(
               ") is available",
             link: "https://bitfocus.io/companion?inapp_stable",
           };
-        } else if (semver.gt(latestBetaAvailable, currentlyInstalled)) {
+        } else if (semver.gt(latestBetaAvailable, currentInstalledVersion)) {
           return {
             message:
               "A new beta version (" + latestBetaAvailable + ") is available",
