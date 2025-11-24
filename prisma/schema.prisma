@@ -23,7 +23,7 @@ model User {
   app_build   String @db.VarChar(255) // companion build number
 
   os_platform String @db.VarChar(16) // windows/macos/linux etc
-  os_release  String @db.VarChar(32) // os version
+  os_release  String @db.VarChar(48) // os version
   os_arch     String @db.VarChar(8) // x64/arm64 etc
 
   createdAt DateTime @default(now())
@@ -31,6 +31,7 @@ model User {
 
   @@unique([user_id, app_name])
   @@index([app_name, app_version])
+  @@index([updatedAt])
 }
 
 // TODO - more index
