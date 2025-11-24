@@ -43,7 +43,7 @@ export function registerUpdateRoutes(
         Sentry.captureException(error, { extra: { userInfo: request.body } });
       });
 
-      if (request.headers["FROM-OLD-SERVER"]) {
+      if (request.headers?.["FROM-OLD-SERVER"]) {
         // This is from the old server, so we can skip the actual update check
         return {
           message: "",
