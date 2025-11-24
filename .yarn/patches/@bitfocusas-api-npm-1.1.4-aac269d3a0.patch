@@ -47,3 +47,15 @@ index 63d53dd199cff64f36d874a8171d19442f3b6d6c..715ab67e16ca2dd3427540f4e13198f4
              redis: undefined,
              skipOnError: true,
              nameSpace: 'faz:',
+diff --git a/dist/api-server.js b/dist/api-server.js
+index 63d53dd199cff64f36d874a8171d19442f3b6d6c..b255e3b5f8ebd907a6f5824ac21301a9a6f754fa 100644
+--- a/dist/api-server.js
++++ b/dist/api-server.js
+@@ -211,6 +211,7 @@ class APIServer {
+                     body: validatedBody,
+                     params: validatedParams,
+                     auth: request.auth,
++                    headers: request.headers,
+                 };
+                 const result = await endpointConfig.handler(typedRequest, reply);
+                 const strictResponse = applyStrict(endpointConfig.response);

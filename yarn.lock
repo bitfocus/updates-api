@@ -61,7 +61,7 @@ __metadata:
 
 "@bitfocusas/api@patch:@bitfocusas/api@npm%3A1.1.4#~/.yarn/patches/@bitfocusas-api-npm-1.1.4-aac269d3a0.patch":
   version: 1.1.4
-  resolution: "@bitfocusas/api@patch:@bitfocusas/api@npm%3A1.1.4#~/.yarn/patches/@bitfocusas-api-npm-1.1.4-aac269d3a0.patch::version=1.1.4&hash=de7b6f"
+  resolution: "@bitfocusas/api@patch:@bitfocusas/api@npm%3A1.1.4#~/.yarn/patches/@bitfocusas-api-npm-1.1.4-aac269d3a0.patch::version=1.1.4&hash=ddc018"
   dependencies:
     "@fastify/cors": "npm:^9.0.1"
     "@fastify/rate-limit": "npm:^9.1.0"
@@ -73,7 +73,7 @@ __metadata:
     fastify-type-provider-zod: "npm:^2.0.0"
   peerDependencies:
     zod: ^3.22.0
-  checksum: 10c0/a2a00550896654487e647d1d2c39eb477bcc5a64585bb9043016a90ea804e6ecf095efbc606dd71dbdc122103f2a75509097d818d84b1e2069d39a6175f3cf4a
+  checksum: 10c0/4275f8a58f78a762cca56c5700f9208f72c560be3a2980fca127af11d22385923264eea57fa0094cd3d75352900ea6ebde4591c927e9821150ebf576f24e1d28
   languageName: node
   linkType: hard
 
@@ -1665,6 +1665,7 @@ __metadata:
     "@types/node": "npm:^24.10.1"
     "@types/semver": "npm:^7"
     debug: "npm:^4.4.3"
+    mariadb: "npm:^3.4.5"
     openapi-fetch: "npm:^0.15.0"
     openapi-typescript: "npm:^7.10.1"
     prisma: "npm:^7.0.0"
@@ -2556,7 +2557,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mariadb@npm:3.4.5":
+"mariadb@npm:3.4.5, mariadb@npm:^3.4.5":
   version: 3.4.5
   resolution: "mariadb@npm:3.4.5"
   dependencies:
