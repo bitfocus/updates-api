@@ -114,29 +114,23 @@ export async function writeConnectionsUsage(
             });
           }
 
-          await Promise.all(
-            Object.entries(conn.counts).map(async ([ver, cnt]) => {
-              try {
-                const moduleRowId = await getOrCreateModuleRowId(ver);
-                await updateConnectionModuleCounts(
-                  tx,
-                  common,
-                  moduleRowId,
-                  cnt
-                );
-              } catch (e) {
-                ok = false;
+          // Do in series to minimise connection usage
+          for (const [ver, cnt] of Object.entries(conn.counts)) {
+            try {
+              const moduleRowId = await getOrCreateModuleRowId(ver);
+              await updateConnectionModuleCounts(tx, common, moduleRowId, cnt);
+            } catch (e) {
+              ok = false;
 
-                Sentry.captureException(e, {
-                  extra: {
-                    connectionVersion: ver,
-                    count: cnt,
-                    connection: conn,
-                  },
-                });
-              }
-            })
-          );
+              Sentry.captureException(e, {
+                extra: {
+                  connectionVersion: ver,
+                  count: cnt,
+                  connection: conn,
+                },
+              });
+            }
+          }
         },
         {
           timeout: 20000, // High timeout, due to number of operations
