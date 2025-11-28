@@ -1,6 +1,6 @@
 import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
-import { clearOtherUsageData, writeSurfacesUsage } from "./lib/write-usage.js";
+import { writeSurfacesUsage } from "./lib/write-usage.js";
 import * as Sentry from "@sentry/node";
 import {
   DetailedUsageConnectionType,
