@@ -35,3 +35,57 @@ model User {
 }
 
 // TODO - more index
+
+enum ModuleType {
+  CONNECTION
+  SURFACE
+}
+
+model KnownModule {
+  id Int @id @default(autoincrement())
+
+  module_type    ModuleType
+  module_name    String     @db.VarChar(128)
+  module_version String     @db.VarChar(32) // Empty string for 'all' (null caused uniqueness issues)
+
+  first_seen DateTime @default(now())
+
+  moduleUserLastSeens ModuleUserLastSeen[]
+  moduleDailyUsages   ModuleDailyUsage[]
+
+  @@unique([module_type, module_name, module_version])
+  // TODO: this is way too many indexes - figure out which ones are actually needed
+  @@index([module_type])
+  @@index([module_name])
+  @@index([module_type, module_name])
+  @@index([module_name, module_version])
+}
+
+model ModuleUserLastSeen {
+  id        Int      @id @default(autoincrement())
+  module_id Int
+  user_id   String   @db.VarChar(64) // companion user id
+  max_count Int
+  last_seen DateTime
+
+  module KnownModule @relation(fields: [module_id], references: [id], onDelete: Restrict)
+
+  @@unique([user_id, module_id])
+  @@index([user_id])
+  @@index([module_id, last_seen])
+}
+
+model ModuleDailyUsage {
+  id        Int      @id @default(autoincrement())
+  date      DateTime // normalized to UTC midnight (yyyy-mm-ddT00:00:00Z)
+  module_id Int
+  user_id   String   @db.VarChar(64)
+  max_count Int
+
+  module KnownModule @relation(fields: [module_id], references: [id], onDelete: Restrict)
+
+  @@unique([date, user_id, module_id], name: "date_user_module")
+  @@index([date, user_id])
+  @@index([date, module_id])
+  @@index([module_id, date])
+}

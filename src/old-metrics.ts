@@ -1,15 +1,12 @@
 import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
-import {
-  clearOtherUsageData,
-  writeConnectionsUsage,
-  writeSurfacesUsage,
-} from "./lib/write-usage.js";
+import { clearOtherUsageData, writeSurfacesUsage } from "./lib/write-usage.js";
 import * as Sentry from "@sentry/node";
 import {
   DetailedUsageConnectionType,
   DetailedUsageSurfaceType,
 } from "./detailed-usage.js";
+import { writeConnectionsUsage } from "./lib/write-connections-usage.js";
 
 const OldMetricsResponse = z.object({
   ok: z.boolean().describe("Indicates if the report was received successfully"),
@@ -21,7 +18,7 @@ export function registerOldMetricsRoutes(
 ): void {
   app.createEndpoint({
     method: "POST",
-    url: "/old-metrics",
+    url: "/companion/old-metrics",
     body: z.any(), // No validation, as the structure is not very well defined :(
     response: OldMetricsResponse,
     config: {
@@ -86,14 +83,17 @@ export function registerOldMetricsRoutes(
             for (const [moduleId, counts] of Object.entries<any>(mv)) {
               if (!moduleId || !counts) continue;
 
+              const safeCounts: Record<string, number> = {};
+              for (const [version, count] of Object.entries<any>(counts)) {
+                const safeCount: number | undefined = Number(count);
+                if (isNaN(safeCount) || safeCount < 0) continue;
+
+                safeCounts[String(version)] = safeCount;
+              }
+
               connections.push({
                 moduleId: String(moduleId),
-                counts: Object.fromEntries(
-                  Object.entries<any>(counts).map(([version, count]) => [
-                    String(version),
-                    Number(count),
-                  ])
-                ),
+                counts: safeCounts,
               });
             }
           } catch (e) {
@@ -107,10 +107,13 @@ export function registerOldMetricsRoutes(
             for (const [moduleId, count] of Object.entries<any>(m)) {
               if (!moduleId || !count) continue;
 
+              const safeCount = Number(count);
+              if (isNaN(safeCount) || safeCount < 0) continue;
+
               connections.push({
                 moduleId: String(moduleId),
                 counts: {
-                  unknown: Number(count),
+                  unknown: safeCount,
                 },
               });
             }
@@ -121,7 +124,7 @@ export function registerOldMetricsRoutes(
 
         // Write tracked data
         await Promise.all([
-          clearOtherUsageData(prisma, i),
+          // clearOtherUsageData(prisma, i),
           writeSurfacesUsage(prisma, i, surfaces),
           writeConnectionsUsage(prisma, i, connections),
         ]);

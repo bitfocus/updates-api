@@ -117,7 +117,7 @@ export function registerDetailedUsageRoutes(
 ): void {
   app.createEndpoint({
     method: "POST",
-    url: "/detailed-usage",
+    url: "/companion/detailed-usage",
     body: DetailedUsageBody,
     response: DetailedUsageResponse,
     config: {
