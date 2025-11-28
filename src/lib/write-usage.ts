@@ -14,6 +14,7 @@ export async function writeUsageData(
   // TODO basic info
   // TODO features
 
+  // TODO - ok/error handling
   await Promise.all([
     writeSurfacesUsage(prisma, data.id, data.surfaces),
     writeConnectionsUsage(prisma, data.id, data.connections),
@@ -35,6 +36,7 @@ export async function writeSurfacesUsage(
   prisma: PrismaClient,
   machineId: string,
   surfaces: DetailedUsageSurfaceType[]
-): Promise<void> {
+): Promise<boolean> {
   // TODO
+  return true;
 }

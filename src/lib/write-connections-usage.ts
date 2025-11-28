@@ -1,19 +1,19 @@
 import type { DetailedUsageConnectionType } from "../detailed-usage.js";
 import type { PrismaClient } from "../prisma/client.js";
 import type { PrismaTransaction } from "./types.js";
+import * as Sentry from "@sentry/node";
 
 export async function writeConnectionsUsage(
   prisma: PrismaClient,
   machineId: string,
   connections: DetailedUsageConnectionType[]
-): Promise<void> {
+): Promise<boolean> {
   // If no connections, nothing to do.
   // It doesn't make sense to purge the last-seen data, as we do want to keep knowledge if they used it yesterday.
   // For the detailed usage, we won't decrease the max_counts either.
-  if (!connections || connections.length === 0) return;
+  if (!connections || connections.length === 0) return true;
 
-  // Hack: temporary skip while testing performance
-  if (process.env.SKIP_USAGE) return;
+  let ok = true;
 
   const now = new Date();
   const utcDay = new Date(
@@ -66,56 +66,90 @@ export async function writeConnectionsUsage(
 
   // Note: do these sequentially, to avoid spawning too many concurrent operations
   for (const conn of connections) {
-    // Ensure all modules are defined
-    const moduleName = conn.moduleId;
+    try {
+      const moduleName = conn.moduleId.slice(0, 128); // Clamp length to not overflow the table column
 
-    // Fetch all the possible versions
-    const moduleRowIds = await findModuleRowIds(prisma, moduleName);
-    // Helper to get from the cached, or to upsert a new row
-    const getOrCreateModuleRowId = async (
-      version: string | null
-    ): Promise<number> => {
-      let rowId = moduleRowIds.get(version);
-      if (rowId === undefined) {
-        // No need to worry about race conditions as this performs an upsert
-        // This intentionally does not use the transaction, to avoid contention across multiple users
-        rowId = await createConnectionModule(prisma, moduleName, version);
-        moduleRowIds.set(version, rowId);
+      // Fetch all the possible versions
+      const moduleRowIds = await findModuleRowIds(prisma, moduleName);
+      // Helper to get from the cached, or to upsert a new row
+      const getOrCreateModuleRowId = async (
+        version0: string | null
+      ): Promise<number> => {
+        const version = version0 ? version0.slice(0, 32) : null; // Clamp length to not overflow the table column
+
+        let rowId = moduleRowIds.get(version);
+        if (rowId === undefined) {
+          // No need to worry about race conditions as this performs an upsert
+          // This intentionally does not use the transaction, to avoid contention across multiple users
+          rowId = await createConnectionModule(prisma, moduleName, version);
+          moduleRowIds.set(version, rowId);
+        }
+        return rowId;
+      };
+
+      // Ensure the 'sum' module exists
+      const sumModuleRowId = await getOrCreateModuleRowId(null);
+
+      // normalize counts and compute total instances
+      let totalInstances = 0;
+      for (const cnt of Object.values(conn.counts)) {
+        if (cnt) totalInstances += cnt;
       }
-      return rowId;
-    };
 
-    // Ensure the 'sum' module exists
-    const sumModuleRowId = await getOrCreateModuleRowId(null);
+      // Run the updates in a transaction
+      await prisma.$transaction(
+        async (tx) => {
+          try {
+            await updateConnectionModuleCounts(
+              tx,
+              common,
+              sumModuleRowId,
+              totalInstances
+            );
+          } catch (e) {
+            ok = false;
 
-    // normalize counts and compute total instances
-    let totalInstances = 0;
-    for (const cnt of Object.values(conn.counts)) {
-      if (cnt) totalInstances += cnt;
+            Sentry.captureException(e, {
+              extra: { connection: conn },
+            });
+          }
+
+          await Promise.all(
+            Object.entries(conn.counts).map(async ([ver, cnt]) => {
+              try {
+                const moduleRowId = await getOrCreateModuleRowId(ver);
+                await updateConnectionModuleCounts(
+                  tx,
+                  common,
+                  moduleRowId,
+                  cnt
+                );
+              } catch (e) {
+                ok = false;
+
+                Sentry.captureException(e, {
+                  extra: {
+                    connectionVersion: ver,
+                    count: cnt,
+                    connection: conn,
+                  },
+                });
+              }
+            })
+          );
+        },
+        {
+          timeout: 20000, // High timeout, due to number of operations
+        }
+      );
+    } catch (e) {
+      ok = false;
+
+      Sentry.captureException(e, { extra: { connection: conn } });
     }
-
-    // Run the updates in a transaction
-    await prisma.$transaction(
-      async (tx) => {
-        await updateConnectionModuleCounts(
-          tx,
-          common,
-          sumModuleRowId,
-          totalInstances
-        );
-
-        await Promise.all(
-          Object.entries(conn.counts).map(async ([ver, cnt]) => {
-            const moduleRowId = await getOrCreateModuleRowId(ver);
-            await updateConnectionModuleCounts(tx, common, moduleRowId, cnt);
-          })
-        );
-      },
-      {
-        timeout: 20000, // High timeout, due to number of operations
-      }
-    );
   }
+
+  return ok;
 }
 
 async function findModuleRowIds(prisma: PrismaClient, moduleName: string) {

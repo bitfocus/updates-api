@@ -122,15 +122,37 @@ export function registerOldMetricsRoutes(
           }
         }
 
+        let ok = true; // Track if anything errored that should tell the client to retry
+
         // Write tracked data
         await Promise.all([
           // clearOtherUsageData(prisma, i),
-          writeSurfacesUsage(prisma, i, surfaces),
-          writeConnectionsUsage(prisma, i, connections),
+          writeSurfacesUsage(prisma, i, surfaces).then(
+            (thisOk) => {
+              if (!thisOk) ok = false;
+            },
+            (err) => {
+              ok = false;
+              Sentry.captureException(err, {
+                extra: { machineId: i, surfaces },
+              });
+            }
+          ),
+          writeConnectionsUsage(prisma, i, connections).then(
+            (thisOk) => {
+              if (!thisOk) ok = false;
+            },
+            (err) => {
+              ok = false;
+              Sentry.captureException(err, {
+                extra: { machineId: i, connections },
+              });
+            }
+          ),
         ]);
 
         return {
-          ok: true,
+          ok,
         };
       } catch (error) {
         console.error("Error updating usage stats in database:", error);
