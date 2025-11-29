@@ -9,12 +9,18 @@ import * as Sentry from "@sentry/node";
 import { registerDetailedUsageRoutes } from "./detailed-usage.js";
 import { registerOldMetricsRoutes } from "./old-metrics.js";
 
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL environment variable is required");
+}
+
+const dbUrl = new URL(connectionString);
 const adapter = new PrismaMariaDb({
-  host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT || "") || 3306,
-  database: process.env.DB_NAME || "updates_api",
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: dbUrl.hostname,
+  port: parseInt(dbUrl.port) || 3306,
+  database: dbUrl.pathname.slice(1), // Remove leading slash
+  user: dbUrl.username || undefined,
+  password: dbUrl.password || undefined,
   connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || "") || 20,
 });
 const prisma = new PrismaClient({
