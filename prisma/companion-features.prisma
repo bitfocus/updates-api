@@ -4,7 +4,6 @@ model CompanionFeatures {
   user_id String @db.VarChar(64) // companion user id
 
   // This largely duplicates the User model, but is kept separate due to different update rates
-  app_name    String @db.VarChar(16) // companion/satellite etc
   app_version String @db.VarChar(16) // companion version
   app_build   String @db.VarChar(255) // companion build number
 

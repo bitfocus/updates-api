@@ -137,7 +137,7 @@ export function registerDetailedUsageRoutes(
     },
     handler: async (request) => {
       try {
-        const { id, surfaces, connections, features } = request.body;
+        const { id, app, os, surfaces, connections, features } = request.body;
 
         let ok = true; // Track if anything errored that should tell the client to retry
         const catchErrors = async (
@@ -158,7 +158,7 @@ export function registerDetailedUsageRoutes(
         };
 
         await Promise.all([
-          catchErrors(writeFeatureUsageData(prisma, id, features), {
+          catchErrors(writeFeatureUsageData(prisma, id, app, os, features), {
             features,
           }),
           catchErrors(writeSurfacesUsage(prisma, id, surfaces), { surfaces }),

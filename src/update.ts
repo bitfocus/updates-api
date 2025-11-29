@@ -17,6 +17,7 @@ export const UpdatesBody = z.object({
     release: z.string().describe("OS release version"),
   }),
 });
+export type UpdatesBodyType = z.infer<typeof UpdatesBody>;
 
 const UpdatesResponse = z.object({
   message: z.string().describe("Update message"),
