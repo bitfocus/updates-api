@@ -123,32 +123,30 @@ export function registerOldMetricsRoutes(
         }
 
         let ok = true; // Track if anything errored that should tell the client to retry
+        const catchErrors = async (
+          res: Promise<boolean>,
+          extra: Record<string, unknown>
+        ) => {
+          await res.then(
+            (thisOk) => {
+              if (!thisOk) ok = false;
+            },
+            (err) => {
+              ok = false;
+              Sentry.captureException(err, {
+                extra: { machineId: i, ...extra },
+              });
+            }
+          );
+        };
 
         // Write tracked data
         await Promise.all([
           // clearOtherUsageData(prisma, i),
-          writeSurfacesUsage(prisma, i, surfaces).then(
-            (thisOk) => {
-              if (!thisOk) ok = false;
-            },
-            (err) => {
-              ok = false;
-              Sentry.captureException(err, {
-                extra: { machineId: i, surfaces },
-              });
-            }
-          ),
-          writeConnectionsUsage(prisma, i, connections).then(
-            (thisOk) => {
-              if (!thisOk) ok = false;
-            },
-            (err) => {
-              ok = false;
-              Sentry.captureException(err, {
-                extra: { machineId: i, connections },
-              });
-            }
-          ),
+          catchErrors(writeSurfacesUsage(prisma, i, surfaces), { surfaces }),
+          catchErrors(writeConnectionsUsage(prisma, i, connections), {
+            connections,
+          }),
         ]);
 
         return {

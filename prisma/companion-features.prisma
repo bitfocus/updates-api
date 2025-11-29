@@ -1,0 +1,60 @@
+model CompanionFeatures {
+  id Int @id @default(autoincrement())
+
+  user_id String @db.VarChar(64) // companion user id
+
+  // This largely duplicates the User model, but is kept separate due to different update rates
+  app_name    String @db.VarChar(16) // companion/satellite etc
+  app_version String @db.VarChar(16) // companion version
+  app_build   String @db.VarChar(255) // companion build number
+
+  os_platform String @db.VarChar(16) // windows/macos/linux etc
+  os_release  String @db.VarChar(48) // os version
+  os_arch     String @db.VarChar(8) // x64/arm64 etc
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Features
+  // Note: new fields MUST be optional, to avoid breaking older clients
+
+  // General feature flags
+  isBoundToLoopback Boolean
+  hasAdminPassword  Boolean
+  hasPincodeLockout Boolean
+  cloudEnabled      Boolean
+  httpsEnabled      Boolean
+
+  // Protocol usage
+  tcpEnabled           Boolean
+  tcpDeprecatedEnabled Boolean
+  udpEnabled           Boolean
+  udpDeprecatedEnabled Boolean
+  oscEnabled           Boolean
+  oscDeprecatedEnabled Boolean
+  rossTalkEnabled      Boolean
+  emberPlusEnabled     Boolean
+  artnetEnabled        Boolean
+
+  // Usage counts
+  connectionCount         Int // We have this elsewhere, but this makes it easier to graph
+  pageCount               Int
+  buttonCount             Int
+  triggerCount            Int
+  surfaceGroupCount       Int
+  customVariableCount     Int
+  expressionVariableCount Int
+
+  gridMinCol Int
+  gridMaxCol Int
+  gridMinRow Int
+  gridMaxRow Int
+
+  connectedSatellites Int
+
+  @@unique([user_id])
+  @@index([app_version])
+  @@index([updatedAt])
+}
+
+// TODO - more index
