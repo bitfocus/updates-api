@@ -7,7 +7,7 @@ WORKDIR /app
 RUN corepack enable
 
 # Copy package files
-COPY package.json yarn.lock .yarnrc.yml ./
+COPY package.json yarn.lock .yarnrc.yml prisma.config.ts ./
 COPY .yarn ./.yarn
 
 # Install dependencies
@@ -32,7 +32,7 @@ WORKDIR /app
 RUN corepack enable
 
 # Copy package files for production dependencies
-COPY package.json yarn.lock .yarnrc.yml ./
+COPY package.json yarn.lock .yarnrc.yml prisma.config.ts ./
 COPY .yarn ./.yarn
 
 # Install production dependencies only
