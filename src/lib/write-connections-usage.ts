@@ -21,29 +21,17 @@ export async function writeConnectionsUsage(
   ); // midnight UTC
 
   // Fetch existing rows, to allow for updating in place
-  const [existingDailyRowsRaw, existingLastSeenRowsRaw] = await Promise.all([
-    prisma.moduleDailyUsage.findMany({
-      where: {
-        date: utcDay,
-        user_id: machineId,
-      },
-      select: {
-        id: true,
-        module_id: true,
-        max_count: true,
-      },
-    }),
-    prisma.moduleUserLastSeen.findMany({
-      where: {
-        user_id: machineId,
-      },
-      select: {
-        id: true,
-        module_id: true,
-        max_count: true,
-      },
-    }),
-  ]);
+  const existingDailyRowsRaw = await prisma.moduleDailyUsage.findMany({
+    where: {
+      date: utcDay,
+      user_id: machineId,
+    },
+    select: {
+      id: true,
+      module_id: true,
+      max_count: true,
+    },
+  });
 
   const common: CommonData = {
     machineId,
@@ -52,12 +40,6 @@ export async function writeConnectionsUsage(
 
     existingDailyRowCounts: new Map(
       existingDailyRowsRaw.map((r) => [
-        r.module_id,
-        { id: r.id, count: r.max_count },
-      ])
-    ),
-    existingLastSeenRowCounts: new Map(
-      existingLastSeenRowsRaw.map((r) => [
         r.module_id,
         { id: r.id, count: r.max_count },
       ])
@@ -194,7 +176,6 @@ interface CommonData {
   utcDay: Date;
 
   existingDailyRowCounts: ReadonlyMap<number, { id: number; count: number }>;
-  existingLastSeenRowCounts: ReadonlyMap<number, { id: number; count: number }>;
 }
 
 async function updateConnectionModuleCounts(
@@ -204,10 +185,7 @@ async function updateConnectionModuleCounts(
   instanceCount: number
 ) {
   const existingDaily = common.existingDailyRowCounts.get(moduleRowId);
-  const existingLastSeen = common.existingLastSeenRowCounts.get(moduleRowId);
-
   const newDailyMax = Math.max(existingDaily?.count ?? 0, instanceCount);
-  const newLastSeenMax = Math.max(existingLastSeen?.count ?? 0, instanceCount);
 
   await Promise.all([
     prisma.moduleDailyUsage.upsert({
@@ -238,13 +216,13 @@ async function updateConnectionModuleCounts(
       },
       update: {
         last_seen: common.now,
-        max_count: newLastSeenMax,
+        max_count: instanceCount,
       },
       create: {
         user_id: common.machineId,
         module_id: moduleRowId,
         last_seen: common.now,
-        max_count: newLastSeenMax,
+        max_count: instanceCount,
       },
       select: { id: true },
     }),
