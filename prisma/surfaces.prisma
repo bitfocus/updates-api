@@ -1,0 +1,28 @@
+model SurfaceUserLastSeen {
+  id      Int    @id @default(autoincrement())
+  user_id String @db.VarChar(64) // companion user id
+
+  module_name         String @db.VarChar(128)
+  surface_serial      String @db.VarChar(64)
+  surface_description String @db.VarChar(128)
+
+  last_seen DateTime
+
+  @@unique([user_id, module_name, surface_serial])
+  @@index([user_id])
+  @@index([user_id, module_name])
+}
+
+model SurfaceDailyUsage {
+  id      Int      @id @default(autoincrement())
+  date    DateTime // normalized to UTC midnight (yyyy-mm-ddT00:00:00Z)
+  user_id String   @db.VarChar(64)
+
+  module_name String @db.VarChar(128)
+  max_count   Int
+
+  @@unique([date, user_id, module_name], name: "date_user_module")
+  @@index([date, user_id])
+  @@index([date, module_name])
+  @@index([module_name, date])
+}

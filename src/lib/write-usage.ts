@@ -4,6 +4,7 @@ import type {
 } from "../detailed-usage.js";
 import type { PrismaClient } from "../prisma/client.js";
 import { writeConnectionsUsage } from "./write-connections-usage.js";
+import { writeSurfacesUsage } from "./write-surfaces-usage.js";
 
 export async function writeUsageData(
   prisma: PrismaClient,
@@ -31,12 +32,3 @@ export async function clearOtherUsageData(
   // TODO features
 }
 */
-
-export async function writeSurfacesUsage(
-  prisma: PrismaClient,
-  machineId: string,
-  surfaces: DetailedUsageSurfaceType[]
-): Promise<boolean> {
-  // TODO
-  return true;
-}

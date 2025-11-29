@@ -1,11 +1,11 @@
 import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
-import { writeSurfacesUsage } from "./lib/write-usage.js";
 import * as Sentry from "@sentry/node";
 import {
   DetailedUsageConnectionType,
   DetailedUsageSurfaceType,
 } from "./detailed-usage.js";
+import { writeSurfacesUsage } from "./lib/write-surfaces-usage.js";
 import { writeConnectionsUsage } from "./lib/write-connections-usage.js";
 
 const OldMetricsResponse = z.object({
