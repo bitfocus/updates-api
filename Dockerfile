@@ -9,6 +9,7 @@ RUN corepack enable
 # Copy package files
 COPY package.json yarn.lock .yarnrc.yml prisma.config.ts ./
 COPY .yarn ./.yarn
+COPY .env.example ./.env
 
 # Install dependencies
 RUN yarn install --immutable
