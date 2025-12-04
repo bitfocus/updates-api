@@ -125,7 +125,9 @@ async function writeSurfacesLastSeen(
           try {
             const safeModuleName = surface.moduleId.slice(0, 128); // Trim to fit DB
             const safeSerial = surface.id.slice(0, 64); // Trim to fit DB
-            const safeDescription = surface.description.slice(0, 128); // Trim to fit DB
+            const safeDescription = translateDescription(
+              surface.description
+            ).slice(0, 128); // Trim to fit DB
 
             await tx.surfaceUserLastSeen.upsert({
               where: {
@@ -174,4 +176,50 @@ async function writeSurfacesLastSeen(
     });
 
   return ok;
+}
+
+function translateDescription(description: string): string {
+  switch (description) {
+    case "Stream Deck":
+    case "Satellite StreamDeck: original":
+    case "Satellite StreamDeck: originalv2":
+      return "Elgato Stream Deck";
+    case "Stream Deck XL":
+    case "Satellite StreamDeck: xl":
+    case "Satellite StreamDeck: xlv2":
+      return "Elgato Stream Deck XL";
+    case "Stream Deck Mini":
+    case "Satellite StreamDeck: mini":
+    case "Satellite StreamDeck: miniv2":
+      return "Elgato Stream Deck Mini";
+    case "Stream Deck MK.2":
+    case "Satellite StreamDeck: original-mk2":
+      return "Elgato Stream Deck MK.2";
+    case "Stream Deck +":
+    case "Satellite StreamDeck: plus":
+      return "Elgato Stream Deck Plus";
+    case "Stream Deck Pedal":
+    case "Satellite StreamDeck: pedal":
+      return "Elgato Stream Deck Pedal";
+    case "Stream Deck Neo":
+    case "Satellite StreamDeck: neo":
+      return "Elgato Stream Deck Neo";
+    case "Stream Deck 15 Module":
+      return "Elgato Stream Deck 15 Module";
+    case "Stream Deck 32 Module":
+      return "Elgato Stream Deck 32 Module";
+    case "Stream Deck 6 Module":
+      return "Elgato Stream Deck 6 Module";
+    case "Stream Deck MK.2 (Scissor)":
+      return "Elgato Stream Deck MK.2 (Scissor)";
+    case "Stream Deck Studio":
+      return "Elgato Stream Deck Studio";
+  }
+
+  if (description.includes("MakePro X Glue")) {
+    return "MakePro X Glue";
+  }
+
+  // Assume it is already good
+  return description;
 }
