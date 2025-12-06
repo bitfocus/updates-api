@@ -107,7 +107,11 @@ export function registerUpdateRoutes(
         Sentry.captureException(error, { extra: { userInfo: request.body } });
       });
 
-      return prepareCompanionResponse(request.body.app_build);
+      const res = await prepareCompanionResponse(request.body.app_build);
+      return {
+        message: res.message,
+        link: res.link,
+      };
     },
   });
 }
