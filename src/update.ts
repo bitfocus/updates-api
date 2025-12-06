@@ -61,6 +61,10 @@ export function registerUpdateRoutes(
       platform: z.string().describe("Operating system platform"),
       arch: z.string().describe("System architecture"),
       release: z.string().describe("OS release version"),
+
+      tz: z.any().optional(),
+      cpus: z.any().optional(),
+      type: z.any().optional(),
     }),
     response: z.object({
       message: z.string().describe("Update message"),
