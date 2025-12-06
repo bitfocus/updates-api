@@ -1,8 +1,8 @@
 import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
-import { BitfocusApi } from "./lib/bitfocus-api.js";
 import semver from "semver";
 import * as Sentry from "@sentry/node";
+import { getLatestReleases } from "./lib/releases.js";
 
 export const UpdatesBody = z.object({
   id: z.string().describe("Unique identifier for the installation"),
@@ -20,9 +20,15 @@ export const UpdatesBody = z.object({
 export type UpdatesBodyType = z.infer<typeof UpdatesBody>;
 
 const UpdatesResponse = z.object({
+  ok: z
+    .boolean()
+    .describe(
+      "Indicates if the check was successful, or should be retried later"
+    ),
   message: z.string().describe("Update message"),
   link: z.string().url().optional().describe("Download URL"),
 });
+type UpdatesResponseType = z.infer<typeof UpdatesResponse>;
 
 export function registerUpdateRoutes(
   app: APIServer,
@@ -44,7 +50,15 @@ export function registerUpdateRoutes(
         Sentry.captureException(error, { extra: { userInfo: request.body } });
       });
 
-      return prepareResponse(request.body.app.build);
+      if (request.body.app.name === "companion") {
+        return prepareCompanionResponse(request.body.app.build);
+      } else {
+        return {
+          ok: true,
+          message: "",
+          // message: "Unknown application",
+        };
+      }
     },
   });
 
@@ -93,124 +107,151 @@ export function registerUpdateRoutes(
         Sentry.captureException(error, { extra: { userInfo: request.body } });
       });
 
-      return prepareResponse(request.body.app_build);
+      return prepareCompanionResponse(request.body.app_build);
     },
   });
 }
 
-async function prepareResponse(currentInstalledVersionRaw: string) {
-  const currentInstalledVersion = semver.parse(currentInstalledVersionRaw, {
-    loose: true,
-  });
-  if (!currentInstalledVersion) {
+async function prepareCompanionResponse(
+  appBuild: string
+): Promise<UpdatesResponseType> {
+  const parsedBuild = semver.parse(appBuild, { loose: true });
+  if (!parsedBuild) {
     return {
+      ok: true,
       message: "Unable to check updates: Invalid version format",
     };
   }
 
-  try {
-    // Future: should this scrape github releases instead?
-    // For now, use Bitfocus API to get product metadata
-    const productResponse = await BitfocusApi.GET("/product");
-    if (productResponse.error) {
-      throw new Error(`Failed to fetch product data: ${productResponse.error}`);
-    } else if (!productResponse.data) {
-      throw new Error("No product data received from Bitfocus API");
-    }
+  // Very old 2.x versions, interpreting stable vs beta is different and not worth supporting
+  if (parsedBuild.major < 3) {
+    return {
+      ok: true,
+      message:
+        "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
+      link: "https://bitfocus.io/companion?inapp_ancient",
+    };
+  }
 
-    // @ts-expect-error TODO: missing types
-    const product = (productResponse.data as any[]).find(
-      (p) => p.id === "prod_JfHsRVktrUs8pp"
-    );
+  // Known build format must be like: 3.3.1+7001-stable-ee7c3daa
+  // Accept optional leading `v`, require core semver, a `+` build number, then `-stable-<hash>` or `-beta-<hash>`
+  const knownBuildMatch = appBuild.match(
+    /^v?(\d+)\.(\d+)\.(\d+)\+(\d+)-(.+)-([0-9a-fA-F]{7,40})$/
+  );
+  if (!knownBuildMatch) {
+    return {
+      ok: true,
+      message: "Unable to check updates: Unknown build format",
+    };
+  }
 
-    if (!product) throw new Error("Product not found");
+  const buildKind = knownBuildMatch[5];
+  const isStable = buildKind === "stable";
+  const isBeta = buildKind === "beta";
 
-    interface PackageInfo {
-      version: string;
-      build: string;
-    }
+  // Make sure we know the latest releases
+  const latestReleases = getLatestReleases();
+  if (!latestReleases) {
+    return {
+      // Unable to check, encourage client to try again later
+      ok: false,
+      message: "",
+    };
+  }
 
-    const stables: PackageInfo[] = [];
-    const betas: PackageInfo[] = [];
-    const experimentals: PackageInfo[] = [];
+  // If the user version is older than the minor branch of the old stable, we consider it outdated
+  const oldStableMinorBranch = `${latestReleases.oldStable.major}.${latestReleases.oldStable.minor}.0`;
+  // Don't consider beta/stable differences here, just the version number
+  if (semver.lt(parsedBuild, oldStableMinorBranch, { loose: true })) {
+    return {
+      ok: true,
+      message: `This version of Companion is outdated and no longer supported. Please update to the latest version v${latestReleases.currentStable}.`,
+      link: "https://bitfocus.io/companion?inapp_obsolete",
+    };
+  }
 
-    // go through all metadata
-    const metadataKeys = Object.keys(product.metadata);
-    for (let i = 0; i < metadataKeys.length; i++) {
-      const key = metadataKeys[i];
-      const value = product.metadata[key];
-      if (key.startsWith("package:")) {
-        const [_, type, _platform] = key.split(":");
-        const parsedValue = JSON.parse(value);
-        const build = parsedValue.version.replace(/^v/, "");
-        const version = semver.coerce(build, { loose: true })?.version;
-        if (!version) continue;
+  if (isStable) {
+    // Cases handled for stable builds:
+    // - User on old stable minor branch (major.minor == oldStable.major.minor)
+    //   - If user < oldStable => behind old stable (offer update)
+    //   - If user == oldStable => latest of old stable (offer update to current)
+    // - User on current stable minor branch (major.minor == currentStable.major.minor)
+    //   - If user == currentStable => no message
+    //   - If user < currentStable => behind current (offer update)
+    // Any other stable build (different minor) will fall through to the default assumption below.
 
-        if (type === "stable") {
-          stables.push({ version, build });
-        } else if (type === "experimental") {
-          experimentals.push({ version, build });
-        } else if (type === "beta") {
-          betas.push({ version, build });
-        } else {
-          console.log("unknown package type:", type);
-        }
-      }
-    }
-
-    const latestStableAvailable = stables.sort((a, b) =>
-      semver.compare(b.version, a.version)
-    )[0].build;
-    const latestBetaAvailable = betas.sort((a, b) =>
-      semver.compare(b.version, a.version)
-    )[0].build;
-    const latestExperimentalAvailable = experimentals.sort((a, b) =>
-      semver.compare(b.version, a.version)
-    )[0].build;
-
-    if (semver.eq(latestStableAvailable, currentInstalledVersion)) {
-      // running latest, no message.
-      return {
-        message: "",
-      };
-    } else if (latestBetaAvailable === currentInstalledVersionRaw) {
-      return {
-        message: "Remember, this is a beta version!",
-        link: "https://bitfocus.io/companion?inapp_beta",
-      };
-    } else if (semver.eq(latestBetaAvailable, currentInstalledVersion)) {
-      return {
-        message: "This is not the current beta version available",
-        link: "https://bitfocus.io/companion?inapp_beta",
-      };
-    } else if (
-      semver.eq(latestExperimentalAvailable, currentInstalledVersion)
+    // Old stable branch
+    if (
+      parsedBuild.major === latestReleases.oldStable.major &&
+      parsedBuild.minor === latestReleases.oldStable.minor
     ) {
+      if (semver.lt(parsedBuild, latestReleases.oldStable, { loose: true })) {
+        // Behind on the old stable branch
+        // TODO - also report a newer oldstable?
+        return {
+          ok: true,
+          message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
+          link: "https://bitfocus.io/companion?inapp_stable",
+        };
+      }
+
+      // userSem >= latestReleases.oldStable
       return {
-        message: "EXPERIMENTAL",
-        link: "https://bitfocus.io/companion?inapp_experimental",
-      };
-    } else if (semver.gt(latestStableAvailable, currentInstalledVersion)) {
-      return {
-        message:
-          "A new stable version (" + latestStableAvailable + ") is available",
+        ok: true,
+        message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
         link: "https://bitfocus.io/companion?inapp_stable",
       };
-    } else if (semver.gt(latestBetaAvailable, currentInstalledVersion)) {
-      return {
-        message:
-          "A new beta version (" + latestBetaAvailable + ") is available",
-        link: "https://bitfocus.io/companion?inapp_beta",
-      };
-    } else {
-      return {
-        message: "EXPERIMENTAL BUILD: Do not use in production",
-        link: "https://bitfocus.io/companion?inapp_beyond",
-      };
     }
-  } catch (error) {
-    console.error("Failed to fetch updates data:", error);
-    throw new Error("Could not fetch updates information at this time.");
+
+    // Current stable branch
+    if (
+      parsedBuild.major === latestReleases.currentStable.major &&
+      parsedBuild.minor === latestReleases.currentStable.minor
+    ) {
+      if (
+        semver.eq(parsedBuild, latestReleases.currentStable, { loose: true })
+      ) {
+        return {
+          ok: true,
+          message: "",
+        };
+      }
+
+      if (
+        semver.lt(parsedBuild, latestReleases.currentStable, { loose: true })
+      ) {
+        return {
+          ok: true,
+          message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
+          link: "https://bitfocus.io/companion?inapp_stable",
+        };
+      }
+
+      // If userSem > currentStable (unexpected), fall through to default assumption below
+    }
+    // Default assumption for any other stable case: assume on current stable branch and not latest
+    return {
+      ok: true,
+      message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
+      link: "https://bitfocus.io/companion?inapp_stable",
+    };
+  } else if (isBeta) {
+    // Beta
+
+    return {
+      ok: true,
+      message: "Remember, this is a beta version!",
+      link: "https://bitfocus.io/companion?inapp_beta",
+    };
+  } else {
+    // Experimental
+
+    return {
+      ok: true,
+      message:
+        "EXPERIMENTAL: Thank you for testing these experimental features!",
+      link: "https://bitfocus.io/companion?inapp_beyond",
+    };
   }
 }
 

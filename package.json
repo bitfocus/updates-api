@@ -16,6 +16,7 @@
     "@sentry/node": "^10.29.0",
     "debug": "^4.4.3",
     "mariadb": "^3.4.5",
+    "octokit": "^5.0.5",
     "openapi-fetch": "^0.15.0",
     "semver": "^7.7.3",
     "zod": "^3.25.76"
