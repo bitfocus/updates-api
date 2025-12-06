@@ -1,6 +1,7 @@
 import type { DetailedUsageSurfaceType } from "../detailed-usage.js";
 import type { PrismaClient } from "../prisma/client.js";
 import * as Sentry from "@sentry/node";
+import crypto from "crypto";
 
 export async function writeSurfacesUsage(
   prisma: PrismaClient,
@@ -121,6 +122,8 @@ async function writeSurfacesLastSeen(
   await prisma
     .$transaction(
       async (tx) => {
+        const oldSerialsToPrune = new Set<string>();
+
         for (const surface of surfaces) {
           try {
             const safeModuleName = surface.moduleId.slice(0, 128); // Trim to fit DB
@@ -128,6 +131,32 @@ async function writeSurfacesLastSeen(
             const safeDescription = translateDescription(
               surface.description
             ).slice(0, 128); // Trim to fit DB
+
+            try {
+              // Hash the raw serial
+              oldSerialsToPrune.add(
+                crypto.createHash("md5").update(surface.id).digest("hex")
+              );
+
+              // The hashed version could be from before we added the prefix scheme
+              const colonIndex = surface.id.indexOf(":");
+              if (colonIndex !== -1) {
+                const suffix = surface.id.slice(colonIndex + 1);
+                oldSerialsToPrune.add(
+                  crypto.createHash("md5").update(suffix).digest("hex")
+                );
+
+                // Just in case, maybe it was hashed with a satellite- prefix
+                oldSerialsToPrune.add(
+                  crypto
+                    .createHash("md5")
+                    .update(`satellite-${suffix}`)
+                    .digest("hex")
+                );
+              }
+            } catch (e) {
+              Sentry.captureException(e, { extra: { surface } });
+            }
 
             await tx.surfaceUserLastSeen.upsert({
               where: {
@@ -158,6 +187,26 @@ async function writeSurfacesLastSeen(
                 surface,
               },
             });
+          }
+        }
+
+        // Prune any old serials that were stored with legacy hashing
+        if (oldSerialsToPrune.size > 0) {
+          // Future: This could maybe be more intelligent, by fixing up existing rows (from all users) instead of deleting for the current user.
+          // But that will involve a bunch more queries and complexity, so for now just delete.
+
+          const serialsArr = Array.from(oldSerialsToPrune);
+          try {
+            await tx.surfaceUserLastSeen.deleteMany({
+              where: {
+                user_id: machineId,
+                surface_serial: { in: serialsArr },
+              },
+            });
+          } catch (e) {
+            // If pruning fails for any reason, capture and continue to
+            // ensure we still write the upsert below.
+            Sentry.captureException(e, { extra: { surfaces, serialsArr } });
           }
         }
       },
