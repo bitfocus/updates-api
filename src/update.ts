@@ -150,7 +150,7 @@ async function prepareCompanionResponse(
   }
 
   const buildKind = knownBuildMatch[5];
-  const isStable = buildKind === "stable";
+  const isStable = buildKind === "stable" || buildKind.startsWith("stable-");
   const isBeta = buildKind === "beta" || buildKind === "main";
 
   // Make sure we know the latest releases
