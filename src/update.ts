@@ -226,7 +226,7 @@ async function prepareCompanionResponse(
       ) {
         return {
           ok: true,
-          message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
+          message: `A new bugfix release (v${latestReleases.currentStable.version}) is available.`,
           link: "https://bitfocus.io/companion?inapp_stable",
         };
       }
