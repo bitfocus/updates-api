@@ -1,6 +1,6 @@
 {
   "name": "companion-updates-api",
-  "packageManager": "yarn@4.11.0",
+  "packageManager": "yarn@4.12.0",
   "type": "module",
   "scripts": {
     "dev": "tsx --env-file .env --watch src/main.ts",
@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@bitfocusas/api": "patch:@bitfocusas/api@npm%3A1.1.4#~/.yarn/patches/@bitfocusas-api-npm-1.1.4-aac269d3a0.patch",
-    "@prisma/adapter-mariadb": "^7.1.0",
-    "@prisma/client": "^7.1.0",
-    "@sentry/node": "^10.29.0",
+    "@prisma/adapter-mariadb": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "@sentry/node": "^10.32.1",
     "debug": "^4.4.3",
     "mariadb": "^3.4.5",
     "octokit": "^5.0.5",
@@ -22,9 +22,9 @@
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
     "@types/debug": "^4.1.12",
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.10.4",
     "@types/semver": "^7.7.1",
-    "prisma": "^7.1.0",
+    "prisma": "^7.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "zx": "^8.8.5"
