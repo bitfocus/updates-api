@@ -26,6 +26,10 @@ const UpdatesResponse = z.object({
       "Indicates if the check was successful, or should be retried later"
     ),
   message: z.string().describe("Update message"),
+  message2: z
+    .string()
+    .optional()
+    .describe("Additional message (Supported since Companion 4.2)"),
   link: z.string().url().optional().describe("Download URL"),
 });
 type UpdatesResponseType = z.infer<typeof UpdatesResponse>;
@@ -133,7 +137,7 @@ async function prepareCompanionResponse(
       ok: true,
       message:
         "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
-      link: "https://bitfocus.io/companion?inapp_ancient",
+      link: "https://user.bitfocus.io/download?companion_inapp_ancient",
     };
   }
 
@@ -170,7 +174,7 @@ async function prepareCompanionResponse(
     return {
       ok: true,
       message: `This version of Companion is outdated and no longer supported. Please update to the latest version v${latestReleases.currentStable}.`,
-      link: "https://bitfocus.io/companion?inapp_obsolete",
+      link: "https://user.bitfocus.io/download?companion_inapp_obsolete",
     };
   }
 
@@ -195,7 +199,7 @@ async function prepareCompanionResponse(
         return {
           ok: true,
           message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
-          link: "https://bitfocus.io/companion?inapp_stable",
+          link: "https://user.bitfocus.io/download?companion_inapp_stable",
         };
       }
 
@@ -203,7 +207,7 @@ async function prepareCompanionResponse(
       return {
         ok: true,
         message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
-        link: "https://bitfocus.io/companion?inapp_stable",
+        link: "https://user.bitfocus.io/download?companion_inapp_stable",
       };
     }
 
@@ -227,7 +231,7 @@ async function prepareCompanionResponse(
         return {
           ok: true,
           message: `A new bugfix release (v${latestReleases.currentStable.version}) is available.`,
-          link: "https://bitfocus.io/companion?inapp_stable",
+          link: "https://user.bitfocus.io/download?companion_inapp_stable",
         };
       }
 
@@ -237,7 +241,7 @@ async function prepareCompanionResponse(
     return {
       ok: true,
       message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
-      link: "https://bitfocus.io/companion?inapp_stable",
+      link: "https://user.bitfocus.io/download?companion_inapp_stable",
     };
   } else if (isBeta) {
     // Beta
@@ -245,7 +249,7 @@ async function prepareCompanionResponse(
     return {
       ok: true,
       message: "Remember, this is a beta version!",
-      link: "https://bitfocus.io/companion?inapp_beta",
+      link: "https://user.bitfocus.io/download?companion_inapp_beta",
     };
   } else {
     // Experimental
@@ -254,7 +258,7 @@ async function prepareCompanionResponse(
       ok: true,
       message:
         "EXPERIMENTAL: Thank you for testing these experimental features!",
-      link: "https://bitfocus.io/companion?inapp_beyond",
+      link: "https://companion.free?companion_inapp_beyond",
     };
   }
 }
