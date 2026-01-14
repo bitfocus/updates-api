@@ -228,6 +228,11 @@ async function writeSurfacesLastSeen(
 }
 
 function translateDescription(description: string): string {
+  // Fixup some bad naming from some old surface module implementation
+  if (description.startsWith("Elgato ")) {
+    description = description.replace(/\s+\([A-Z0-9]+\)$/, "");
+  }
+
   switch (description) {
     case "Stream Deck":
     case "Satellite StreamDeck: original":
@@ -246,7 +251,7 @@ function translateDescription(description: string): string {
       return "Elgato Stream Deck MK.2";
     case "Stream Deck +":
     case "Satellite StreamDeck: plus":
-    case "Elgato Stream Deck Plus";
+    case "Elgato Stream Deck Plus":
       return "Elgato Stream Deck +";
     case "Stream Deck Pedal":
     case "Satellite StreamDeck: pedal":
