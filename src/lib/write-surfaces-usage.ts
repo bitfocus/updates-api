@@ -230,7 +230,7 @@ async function writeSurfacesLastSeen(
 function translateDescription(description: string): string {
   // Fixup some bad naming from some old surface module implementation
   if (description.startsWith("Elgato ")) {
-    description = description.replace(/\s+\([A-Z0-9]+\)$/, "");
+    description = description.replace(/\s+\([A-Z0-9]{10,}\)$/, "");
   }
 
   switch (description) {
