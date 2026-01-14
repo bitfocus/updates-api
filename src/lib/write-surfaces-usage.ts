@@ -246,7 +246,8 @@ function translateDescription(description: string): string {
       return "Elgato Stream Deck MK.2";
     case "Stream Deck +":
     case "Satellite StreamDeck: plus":
-      return "Elgato Stream Deck Plus";
+    case "Elgato Stream Deck Plus";
+      return "Elgato Stream Deck +";
     case "Stream Deck Pedal":
     case "Satellite StreamDeck: pedal":
       return "Elgato Stream Deck Pedal";
