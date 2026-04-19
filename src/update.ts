@@ -237,6 +237,15 @@ async function prepareCompanionResponse(
 
       // If userSem > currentStable (unexpected), fall through to default assumption below
     }
+
+    // If the user is ahead of the known currentStable (e.g. cache is stale), don't suggest a downgrade
+    if (semver.gt(parsedBuild, latestReleases.currentStable, { loose: true })) {
+      return {
+        ok: true,
+        message: "",
+      };
+    }
+
     // Default assumption for any other stable case: assume on current stable branch and not latest
     return {
       ok: true,
