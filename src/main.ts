@@ -43,6 +43,11 @@ const app = new APIServer({
 // Setup Sentry error handler for Fastify
 Sentry.setupFastifyErrorHandler(app.instance);
 
+// Redirect the root path to the Companion website
+app.instance.get("/", (_request, reply) => {
+  reply.redirect("https://companion.free");
+});
+
 // Register routes
 registerUpdateRoutes(app, prisma);
 registerDetailedUsageRoutes(app, prisma);
