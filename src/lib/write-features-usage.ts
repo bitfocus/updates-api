@@ -35,7 +35,13 @@ export async function writeFeatureUsageData(
     cloudEnabled: features.cloudEnabled,
     httpsEnabled: features.httpsEnabled,
 
+    // New fields default to null ("unknown") when not reported by older clients
+    buttonDecoration: features.buttonDecoration ?? null,
+    buttonStatusIcons: features.buttonStatusIcons ?? null,
+
     // Protocol usage
+    httpEnabled: features.httpEnabled ?? null,
+    httpDeprecatedEnabled: features.httpDeprecatedEnabled ?? null,
     tcpEnabled: features.tcpEnabled,
     tcpDeprecatedEnabled: features.tcpDeprecatedEnabled,
     udpEnabled: features.udpEnabled,
@@ -45,6 +51,9 @@ export async function writeFeatureUsageData(
     rossTalkEnabled: features.rossTalkEnabled,
     emberPlusEnabled: features.emberPlusEnabled,
     artnetEnabled: features.artnetEnabled,
+
+    satelliteSubscriptionsEnabled: features.satelliteSubscriptionsEnabled ?? null,
+    mdnsAnnouncementsEnabled: features.mdnsAnnouncementsEnabled ?? null,
 
     // Usage counts
     connectionCount: features.connectionCount,
@@ -61,6 +70,9 @@ export async function writeFeatureUsageData(
     gridMaxRow: features.gridSize.maxRow,
 
     connectedSatellites: features.connectedSatellites,
+
+    imageLibraryCount: features.imageLibraryCount ?? null,
+    enabledBackupRuleCount: features.enabledBackupRuleCount ?? null,
   };
 
   await prisma.companionFeatures.upsert({

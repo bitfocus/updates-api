@@ -1,11 +1,36 @@
-import type { DetailedUsageConnectionType } from "../detailed-usage.js";
+import type {
+  DetailedUsageConnectionType,
+  DetailedUsageSurfaceModuleType,
+} from "../detailed-usage.js";
 import type { PrismaClient } from "../prisma/client.js";
+import type { ModuleType } from "../prisma/enums.js";
 import type { PrismaTransaction } from "./types.js";
 import * as Sentry from "@sentry/node";
 
 export async function writeConnectionsUsage(
   prisma: PrismaClient,
   machineId: string,
+  connections: DetailedUsageConnectionType[]
+): Promise<boolean> {
+  return writeModuleVersionUsage(prisma, machineId, "CONNECTION", connections);
+}
+
+export async function writeSurfaceModulesUsage(
+  prisma: PrismaClient,
+  machineId: string,
+  surfaceModules: DetailedUsageSurfaceModuleType[]
+): Promise<boolean> {
+  return writeModuleVersionUsage(prisma, machineId, "SURFACE", surfaceModules);
+}
+
+/**
+ * Shared implementation for recording per-version module usage counts.
+ * Used for both connections and surface modules, which share the same shape.
+ */
+async function writeModuleVersionUsage(
+  prisma: PrismaClient,
+  machineId: string,
+  moduleType: ModuleType,
   connections: DetailedUsageConnectionType[]
 ): Promise<boolean> {
   // If no connections, nothing to do.
@@ -52,7 +77,11 @@ export async function writeConnectionsUsage(
       const moduleName = conn.moduleId.slice(0, 128); // Clamp length to not overflow the table column
 
       // Fetch all the possible versions
-      const moduleRowIds = await findModuleRowIds(prisma, moduleName);
+      const moduleRowIds = await findModuleRowIds(
+        prisma,
+        moduleType,
+        moduleName
+      );
       // Helper to get from the cached, or to upsert a new row
       const getOrCreateModuleRowId = async (
         version0: string | null
@@ -63,7 +92,12 @@ export async function writeConnectionsUsage(
         if (rowId === undefined) {
           // No need to worry about race conditions as this performs an upsert
           // This intentionally does not use the transaction, to avoid contention across multiple users
-          rowId = await createConnectionModule(prisma, moduleName, version);
+          rowId = await createConnectionModule(
+            prisma,
+            moduleType,
+            moduleName,
+            version
+          );
           moduleRowIds.set(version, rowId);
         }
         return rowId;
@@ -128,10 +162,14 @@ export async function writeConnectionsUsage(
   return ok;
 }
 
-async function findModuleRowIds(prisma: PrismaClient, moduleName: string) {
+async function findModuleRowIds(
+  prisma: PrismaClient,
+  moduleType: ModuleType,
+  moduleName: string
+) {
   const rows = await prisma.knownModule.findMany({
     where: {
-      module_type: "CONNECTION",
+      module_type: moduleType,
       module_name: moduleName,
     },
     select: {
@@ -146,19 +184,20 @@ async function findModuleRowIds(prisma: PrismaClient, moduleName: string) {
 
 async function createConnectionModule(
   prisma: PrismaTransaction,
+  moduleType: ModuleType,
   moduleName: string,
   moduleVersion: string | null
 ) {
   const row = await prisma.knownModule.upsert({
     where: {
       module_type_module_name_module_version: {
-        module_type: "CONNECTION",
+        module_type: moduleType,
         module_name: moduleName,
         module_version: moduleVersion || "",
       },
     },
     create: {
-      module_type: "CONNECTION",
+      module_type: moduleType,
       module_name: moduleName,
       module_version: moduleVersion || "",
     },

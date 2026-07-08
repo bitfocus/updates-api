@@ -24,7 +24,13 @@ model CompanionFeatures {
   cloudEnabled      Boolean
   httpsEnabled      Boolean
 
+  // New fields MUST be nullable: older clients don't report them, so NULL means "unknown"
+  buttonDecoration  String? @db.VarChar(16) // topbar/border/none
+  buttonStatusIcons String? @db.VarChar(16) // show/none
+
   // Protocol usage
+  httpEnabled           Boolean?
+  httpDeprecatedEnabled Boolean?
   tcpEnabled           Boolean
   tcpDeprecatedEnabled Boolean
   udpEnabled           Boolean
@@ -34,6 +40,9 @@ model CompanionFeatures {
   rossTalkEnabled      Boolean
   emberPlusEnabled     Boolean
   artnetEnabled        Boolean
+
+  satelliteSubscriptionsEnabled Boolean?
+  mdnsAnnouncementsEnabled      Boolean?
 
   // Usage counts
   connectionCount         Int // We have this elsewhere, but this makes it easier to graph
@@ -50,6 +59,9 @@ model CompanionFeatures {
   gridMaxRow Int
 
   connectedSatellites Int
+
+  imageLibraryCount      Int?
+  enabledBackupRuleCount Int?
 
   @@unique([user_id])
   @@index([app_version])

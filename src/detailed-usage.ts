@@ -2,7 +2,10 @@ import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
 import { UpdatesBody } from "./update.js";
 import * as Sentry from "@sentry/node";
-import { writeConnectionsUsage } from "./lib/write-connections-usage.js";
+import {
+  writeConnectionsUsage,
+  writeSurfaceModulesUsage,
+} from "./lib/write-modules-usage.js";
 import { writeSurfacesUsage } from "./lib/write-surfaces-usage.js";
 import { writeFeatureUsageData } from "./lib/write-features-usage.js";
 
@@ -26,6 +29,14 @@ const DetailedUsageConnection = z.object({
     .record(z.string(), z.number())
     .describe("Map of connection versions to count of instances"),
 });
+const DetailedUsageSurfaceModule = z.object({
+  moduleId: z
+    .string()
+    .describe("Type of surface module used (eg elgato-stream-deck, loupedeck)"),
+  counts: z
+    .record(z.string(), z.number())
+    .describe("Map of surface module versions to count of instances"),
+});
 
 const DetailedUsageFeatures = z
   // General feature flags
@@ -44,7 +55,25 @@ const DetailedUsageFeatures = z
       .describe("Indicates if cloud features are enabled"),
     httpsEnabled: z.boolean().describe("Indicates if HTTPS is enabled"),
 
+    // Note: new fields MUST be optional, to avoid breaking reporting from older clients
+    buttonDecoration: z
+      .enum(["topbar", "border", "none"])
+      .describe("The default button decoration style")
+      .optional(),
+    buttonStatusIcons: z
+      .enum(["show", "none"])
+      .describe("Whether surface status icons are shown on buttons")
+      .optional(),
+
     // Protocol usage
+    httpEnabled: z
+      .boolean()
+      .describe("Indicates if the HTTP API is enabled")
+      .optional(),
+    httpDeprecatedEnabled: z
+      .boolean()
+      .describe("Indicates if the deprecated HTTP API is enabled")
+      .optional(),
     tcpEnabled: z.boolean().describe("Indicates if TCP protocol is enabled"),
     tcpDeprecatedEnabled: z
       .boolean()
@@ -66,6 +95,14 @@ const DetailedUsageFeatures = z
     artnetEnabled: z
       .boolean()
       .describe("Indicates if Art-Net protocol is enabled"),
+    satelliteSubscriptionsEnabled: z
+      .boolean()
+      .describe("Indicates if satellite subscriptions are enabled")
+      .optional(),
+    mdnsAnnouncementsEnabled: z
+      .boolean()
+      .describe("Indicates if mDNS announcements are enabled")
+      .optional(),
 
     // Usage counts, to get an idea of scale
     connectionCount: z
@@ -96,6 +133,15 @@ const DetailedUsageFeatures = z
     connectedSatellites: z
       .number()
       .describe("Number of connected satellite clients"),
+
+    imageLibraryCount: z
+      .number()
+      .describe("Number of images in the image library")
+      .optional(),
+    enabledBackupRuleCount: z
+      .number()
+      .describe("Number of enabled backup rules")
+      .optional(),
   })
   .describe("Feature usage details");
 
@@ -104,6 +150,10 @@ export const DetailedUsageBody = UpdatesBody.extend({
   uptime: z.number().describe("Uptime of the application in seconds"),
 
   surfaces: z.array(DetailedUsageSurface).describe("List of setup surfaces"),
+  surfaceModules: z
+    .array(DetailedUsageSurfaceModule)
+    .describe("List of setup surface modules")
+    .optional(),
   connections: z
     .array(DetailedUsageConnection)
     .describe("List of setup connections"),
@@ -112,6 +162,9 @@ export const DetailedUsageBody = UpdatesBody.extend({
 });
 
 export type DetailedUsageSurfaceType = z.infer<typeof DetailedUsageSurface>;
+export type DetailedUsageSurfaceModuleType = z.infer<
+  typeof DetailedUsageSurfaceModule
+>;
 export type DetailedUsageConnectionType = z.infer<
   typeof DetailedUsageConnection
 >;
@@ -137,7 +190,8 @@ export function registerDetailedUsageRoutes(
     },
     handler: async (request) => {
       try {
-        const { id, app, os, surfaces, connections, features } = request.body;
+        const { id, app, os, surfaces, surfaceModules, connections, features } =
+          request.body;
 
         let ok = true; // Track if anything errored that should tell the client to retry
         const catchErrors = async (
@@ -162,6 +216,12 @@ export function registerDetailedUsageRoutes(
             features,
           }),
           catchErrors(writeSurfacesUsage(prisma, id, surfaces), { surfaces }),
+          catchErrors(
+            writeSurfaceModulesUsage(prisma, id, surfaceModules ?? []),
+            {
+              surfaceModules,
+            }
+          ),
           catchErrors(writeConnectionsUsage(prisma, id, connections), {
             connections,
           }),

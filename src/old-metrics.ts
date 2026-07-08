@@ -6,7 +6,7 @@ import {
   DetailedUsageSurfaceType,
 } from "./detailed-usage.js";
 import { writeSurfacesUsage } from "./lib/write-surfaces-usage.js";
-import { writeConnectionsUsage } from "./lib/write-connections-usage.js";
+import { writeConnectionsUsage } from "./lib/write-modules-usage.js";
 
 const OldMetricsResponse = z.object({
   ok: z.boolean().describe("Indicates if the report was received successfully"),
