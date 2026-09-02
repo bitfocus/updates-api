@@ -14,7 +14,7 @@
     "@prisma/client": "^7.8.0",
     "@sentry/node": "^10.63.0",
     "debug": "^4.4.3",
-    "mariadb": "^3.5.3",
+    "mariadb": "^3.5.4",
     "octokit": "^5.0.5",
     "semver": "^7.8.5",
     "zod": "^4.4.3"
