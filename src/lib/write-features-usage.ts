@@ -22,12 +22,13 @@ export async function writeFeatureUsageData(
   > = {
     user_id: machineId,
 
-    app_version: app.version,
-    app_build: app.build,
+    // Clamp lengths to not overflow the table columns
+    app_version: app.version.slice(0, 16),
+    app_build: app.build.slice(0, 255),
 
-    os_platform: os.platform,
-    os_release: os.release,
-    os_arch: os.arch,
+    os_platform: os.platform.slice(0, 16),
+    os_release: os.release.slice(0, 48),
+    os_arch: os.arch.slice(0, 8),
 
     // General feature flags
     isBoundToLoopback: features.isBoundToLoopback,

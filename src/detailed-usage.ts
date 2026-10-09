@@ -58,7 +58,8 @@ const DetailedUsageFeatures = z
       .describe("The default button decoration style")
       .optional(),
     buttonStatusIcons: z
-      .enum(["show", "none"])
+      // Some clients report 'hide', which means the same as 'none'
+      .preprocess((v) => (v === "hide" ? "none" : v), z.enum(["show", "none"]))
       .describe("Whether surface status icons are shown on buttons")
       .optional(),
 

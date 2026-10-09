@@ -276,31 +276,30 @@ async function updateUserDb(
   prisma: PrismaClient,
   userInfo: z.infer<typeof UpdatesBody>
 ): Promise<void> {
+  const appName = userInfo.app.name.slice(0, 16);
+
+  // Clamp lengths to not overflow the table columns
+  const data = {
+    app_version: userInfo.app.version.slice(0, 16),
+    app_build: userInfo.app.build.slice(0, 255),
+
+    os_platform: userInfo.os.platform.slice(0, 16),
+    os_arch: userInfo.os.arch.slice(0, 8),
+    os_release: userInfo.os.release.slice(0, 48),
+  };
+
   await prisma.user.upsert({
     where: {
       user_id_app_name: {
         user_id: userInfo.id,
-        app_name: userInfo.app.name,
+        app_name: appName,
       },
     },
-    update: {
-      app_version: userInfo.app.version,
-      app_build: userInfo.app.build,
-
-      os_platform: userInfo.os.platform,
-      os_arch: userInfo.os.arch,
-      os_release: userInfo.os.release,
-    },
+    update: data,
     create: {
       user_id: userInfo.id,
-
-      app_name: userInfo.app.name,
-      app_version: userInfo.app.version,
-      app_build: userInfo.app.build,
-
-      os_platform: userInfo.os.platform,
-      os_arch: userInfo.os.arch,
-      os_release: userInfo.os.release,
+      app_name: appName,
+      ...data,
     },
   });
 }
