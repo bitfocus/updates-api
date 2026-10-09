@@ -41,7 +41,17 @@ const app = new APIServer({
 });
 
 // Setup Sentry error handler for Fastify
-Sentry.setupFastifyErrorHandler(app.instance);
+Sentry.setupFastifyErrorHandler(app.instance, {
+  shouldHandleError(error, _request, reply) {
+    // Client disconnected mid-request, nothing we can do about it
+    if ((error as NodeJS.ErrnoException).code === "ECONNRESET") return false;
+
+    // Errors thrown from hooks (eg rate-limit) carry their status on the error, not yet on the reply
+    const statusCode =
+      (error as { statusCode?: number }).statusCode ?? reply.statusCode;
+    return statusCode >= 500 || statusCode <= 299;
+  },
+});
 
 // Redirect the root path to the Companion website
 app.instance.get("/", (_request, reply) => {
