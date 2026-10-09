@@ -1,7 +1,4 @@
-import type { PrismaClient } from "../prisma/client.js";
-import type * as runtime from "@prisma/client/runtime/client";
-
-export type PrismaTransaction = Omit<PrismaClient, runtime.ITXClientDenyList>;
+import { Prisma } from "../prisma/client.js";
 
 /**
  * Make all optional properties be required and `| undefined`
@@ -12,3 +9,10 @@ export type Complete<T> = {
     ? T[P]
     : T[P] | undefined;
 };
+
+/** Whether an error is a unique constraint violation, such as from a row being created concurrently */
+export function isUniqueConstraintError(e: unknown): boolean {
+  return (
+    e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002"
+  );
+}

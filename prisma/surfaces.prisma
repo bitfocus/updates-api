@@ -9,8 +9,6 @@ model SurfaceUserLastSeen {
   last_seen DateTime
 
   @@unique([user_id, module_name, surface_serial])
-  @@index([user_id])
-  @@index([user_id, module_name])
 }
 
 model SurfaceDailyUsage {
@@ -22,7 +20,6 @@ model SurfaceDailyUsage {
   max_count   Int
 
   @@unique([date, user_id, module_name], name: "date_user_module")
-  @@index([date, user_id])
   @@index([date, module_name])
   @@index([module_name, date])
 }

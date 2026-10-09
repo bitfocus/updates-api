@@ -4,266 +4,302 @@ import type {
 } from "../detailed-usage.js";
 import type { PrismaClient } from "../prisma/client.js";
 import type { ModuleType } from "../prisma/enums.js";
-import type { PrismaTransaction } from "./types.js";
-import * as Sentry from "@sentry/node";
-
-export async function writeConnectionsUsage(
-  prisma: PrismaClient,
-  machineId: string,
-  connections: DetailedUsageConnectionType[]
-): Promise<boolean> {
-  return writeModuleVersionUsage(prisma, machineId, "CONNECTION", connections);
-}
-
-export async function writeSurfaceModulesUsage(
-  prisma: PrismaClient,
-  machineId: string,
-  surfaceModules: DetailedUsageSurfaceModuleType[]
-): Promise<boolean> {
-  return writeModuleVersionUsage(prisma, machineId, "SURFACE", surfaceModules);
-}
+import { getUtcDay, isLastSeenStale } from "./time.js";
+import { isUniqueConstraintError } from "./types.js";
 
 /**
- * Shared implementation for recording per-version module usage counts.
- * Used for both connections and surface modules, which share the same shape.
+ * Record per-version module usage counts, for both connections and surface modules (which share the same shape).
+ *
+ * To keep database load down, the existing rows are read first and only rows which need changing are written.
+ * Reports arrive hourly, and are usually identical to the previous one.
  */
-async function writeModuleVersionUsage(
+export async function writeModulesUsage(
   prisma: PrismaClient,
   machineId: string,
-  moduleType: ModuleType,
-  connections: DetailedUsageConnectionType[]
+  connections: DetailedUsageConnectionType[],
+  surfaceModules: DetailedUsageSurfaceModuleType[]
 ): Promise<boolean> {
-  // If no connections, nothing to do.
+  // If no modules, nothing to do.
   // It doesn't make sense to purge the last-seen data, as we do want to keep knowledge if they used it yesterday.
   // For the detailed usage, we won't decrease the max_counts either.
-  if (!connections || connections.length === 0) return true;
+  const reported: Array<{
+    moduleType: ModuleType;
+    module: DetailedUsageConnectionType;
+  }> = [
+    ...(connections ?? []).map((module) => ({
+      moduleType: "CONNECTION" as const,
+      module,
+    })),
+    ...(surfaceModules ?? []).map((module) => ({
+      moduleType: "SURFACE" as const,
+      module,
+    })),
+  ];
+  if (reported.length === 0) return true;
 
-  let ok = true;
+  // Clamp lengths to not overflow the table columns
+  const entries = reported.map(({ moduleType, module }) => ({
+    moduleType,
+    moduleName: module.moduleId.slice(0, 128),
+    counts: Object.entries(module.counts).map(
+      ([version, count]) => [version.slice(0, 32), count] as const
+    ),
+  }));
+
+  // Resolve the KnownModule row ids
+  const moduleKeys: KnownModuleKey[] = [];
+  for (const entry of entries) {
+    // The 'sum' module has an empty version
+    moduleKeys.push({ ...entry, moduleVersion: "" });
+    for (const [version] of entry.counts) {
+      moduleKeys.push({ ...entry, moduleVersion: version });
+    }
+  }
+  const moduleIds = await resolveKnownModuleIds(prisma, moduleKeys);
+  const getModuleId = (key: KnownModuleKey) =>
+    moduleIds.get(knownModuleCacheKey(key))!;
+
+  // Compute the instance count for each module row
+  const instanceCounts = new Map<number, number>();
+  const addCount = (moduleRowId: number, count: number) => {
+    instanceCounts.set(
+      moduleRowId,
+      Math.max(instanceCounts.get(moduleRowId) ?? 0, count)
+    );
+  };
+  for (const entry of entries) {
+    let totalInstances = 0;
+    for (const [version, count] of entry.counts) {
+      if (count) totalInstances += count;
+      addCount(getModuleId({ ...entry, moduleVersion: version }), count);
+    }
+    addCount(getModuleId({ ...entry, moduleVersion: "" }), totalInstances);
+  }
 
   const now = new Date();
-  const utcDay = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  ); // midnight UTC
+  await Promise.all([
+    writeModuleDailyUsage(prisma, machineId, now, instanceCounts),
+    writeModuleLastSeen(prisma, machineId, now, instanceCounts),
+  ]);
 
-  // Fetch existing rows, to allow for updating in place
-  const existingDailyRowsRaw = await prisma.moduleDailyUsage.findMany({
+  return true;
+}
+
+async function writeModuleDailyUsage(
+  prisma: PrismaClient,
+  machineId: string,
+  now: Date,
+  instanceCounts: ReadonlyMap<number, number>
+): Promise<void> {
+  const utcDay = getUtcDay(now);
+
+  const existingRows = await prisma.moduleDailyUsage.findMany({
     where: {
       date: utcDay,
       user_id: machineId,
+      module_id: { in: Array.from(instanceCounts.keys()) },
     },
-    select: {
-      id: true,
-      module_id: true,
-      max_count: true,
-    },
+    select: { id: true, module_id: true, max_count: true },
   });
+  const existingById = new Map(existingRows.map((r) => [r.module_id, r]));
 
-  const common: CommonData = {
-    machineId,
-    now,
-    utcDay,
-
-    existingDailyRowCounts: new Map(
-      existingDailyRowsRaw.map((r) => [
-        r.module_id,
-        { id: r.id, count: r.max_count },
-      ])
-    ),
-  };
-
-  // Note: do these sequentially, to avoid spawning too many concurrent operations
-  for (const conn of connections) {
-    try {
-      const moduleName = conn.moduleId.slice(0, 128); // Clamp length to not overflow the table column
-
-      // Fetch all the possible versions
-      const moduleRowIds = await findModuleRowIds(
-        prisma,
-        moduleType,
-        moduleName
-      );
-      // Helper to get from the cached, or to upsert a new row
-      const getOrCreateModuleRowId = async (
-        version0: string | null
-      ): Promise<number> => {
-        const version = version0 ? version0.slice(0, 32) : null; // Clamp length to not overflow the table column
-
-        let rowId = moduleRowIds.get(version);
-        if (rowId === undefined) {
-          // No need to worry about race conditions as this performs an upsert
-          // This intentionally does not use the transaction, to avoid contention across multiple users
-          rowId = await createConnectionModule(
-            prisma,
-            moduleType,
-            moduleName,
-            version
-          );
-          moduleRowIds.set(version, rowId);
-        }
-        return rowId;
-      };
-
-      // Ensure the 'sum' module exists
-      const sumModuleRowId = await getOrCreateModuleRowId(null);
-
-      // normalize counts and compute total instances
-      let totalInstances = 0;
-      for (const cnt of Object.values(conn.counts)) {
-        if (cnt) totalInstances += cnt;
-      }
-
-      // Run the updates in a transaction
-      await prisma.$transaction(
-        async (tx) => {
-          try {
-            await updateConnectionModuleCounts(
-              tx,
-              common,
-              sumModuleRowId,
-              totalInstances
-            );
-          } catch (e) {
-            ok = false;
-
-            Sentry.captureException(e, {
-              extra: { connection: conn },
-            });
-          }
-
-          // Do in series to minimise connection usage
-          for (const [ver, cnt] of Object.entries(conn.counts)) {
-            try {
-              const moduleRowId = await getOrCreateModuleRowId(ver);
-              await updateConnectionModuleCounts(tx, common, moduleRowId, cnt);
-            } catch (e) {
-              ok = false;
-
-              Sentry.captureException(e, {
-                extra: {
-                  connectionVersion: ver,
-                  count: cnt,
-                  connection: conn,
-                },
-              });
-            }
-          }
-        },
-        {
-          timeout: 20000, // High timeout, due to number of operations
-        }
-      );
-    } catch (e) {
-      ok = false;
-
-      Sentry.captureException(e, { extra: { connection: conn } });
+  const newRows: Array<{ module_id: number; max_count: number }> = [];
+  for (const [moduleRowId, count] of instanceCounts) {
+    const existing = existingById.get(moduleRowId);
+    if (!existing) {
+      newRows.push({ module_id: moduleRowId, max_count: count });
+    } else if (count > existing.max_count) {
+      // The guard avoids lowering a count written concurrently
+      await prisma.moduleDailyUsage.updateMany({
+        where: { id: existing.id, max_count: { lt: count } },
+        data: { max_count: count },
+      });
     }
   }
 
-  return ok;
+  if (newRows.length > 0) {
+    const res = await prisma.moduleDailyUsage.createMany({
+      data: newRows.map((r) => ({
+        date: utcDay,
+        user_id: machineId,
+        module_id: r.module_id,
+        max_count: r.max_count,
+      })),
+      skipDuplicates: true,
+    });
+
+    if (res.count < newRows.length) {
+      // Some rows were created concurrently, ensure the counts are applied to them
+      for (const row of newRows) {
+        await prisma.moduleDailyUsage.updateMany({
+          where: {
+            date: utcDay,
+            user_id: machineId,
+            module_id: row.module_id,
+            max_count: { lt: row.max_count },
+          },
+          data: { max_count: row.max_count },
+        });
+      }
+    }
+  }
 }
 
-async function findModuleRowIds(
+async function writeModuleLastSeen(
   prisma: PrismaClient,
-  moduleType: ModuleType,
-  moduleName: string
-) {
+  machineId: string,
+  now: Date,
+  instanceCounts: ReadonlyMap<number, number>
+): Promise<void> {
+  const existingRows = await prisma.moduleUserLastSeen.findMany({
+    where: {
+      user_id: machineId,
+      module_id: { in: Array.from(instanceCounts.keys()) },
+    },
+    select: { id: true, module_id: true, max_count: true, last_seen: true },
+  });
+  const existingById = new Map(existingRows.map((r) => [r.module_id, r]));
+
+  const newRows: Array<{ module_id: number; max_count: number }> = [];
+  const staleIds: number[] = [];
+  for (const [moduleRowId, count] of instanceCounts) {
+    const existing = existingById.get(moduleRowId);
+    if (!existing) {
+      newRows.push({ module_id: moduleRowId, max_count: count });
+    } else if (existing.max_count !== count) {
+      await prisma.moduleUserLastSeen.updateMany({
+        where: { id: existing.id },
+        data: { max_count: count, last_seen: now },
+      });
+    } else if (isLastSeenStale(existing.last_seen, now)) {
+      staleIds.push(existing.id);
+    }
+  }
+
+  if (staleIds.length > 0) {
+    await prisma.moduleUserLastSeen.updateMany({
+      where: { id: { in: staleIds } },
+      data: { last_seen: now },
+    });
+  }
+
+  if (newRows.length > 0) {
+    const res = await prisma.moduleUserLastSeen.createMany({
+      data: newRows.map((r) => ({
+        user_id: machineId,
+        module_id: r.module_id,
+        max_count: r.max_count,
+        last_seen: now,
+      })),
+      skipDuplicates: true,
+    });
+
+    if (res.count < newRows.length) {
+      // Some rows were created concurrently, ensure they reflect this report
+      for (const row of newRows) {
+        await prisma.moduleUserLastSeen.updateMany({
+          where: { user_id: machineId, module_id: row.module_id },
+          data: { max_count: row.max_count, last_seen: now },
+        });
+      }
+    }
+  }
+}
+
+interface KnownModuleKey {
+  moduleType: ModuleType;
+  moduleName: string;
+  moduleVersion: string; // Empty string for the 'sum' module
+}
+
+/**
+ * Cache of KnownModule ids.
+ * Rows in this table are never modified or deleted, so this is safe to cache indefinitely, even with multiple replicas.
+ */
+const knownModuleIdCache = new Map<string, number>();
+
+function knownModuleCacheKey(key: KnownModuleKey): string {
+  return JSON.stringify([key.moduleType, key.moduleName, key.moduleVersion]);
+}
+
+async function resolveKnownModuleIds(
+  prisma: PrismaClient,
+  keys: KnownModuleKey[]
+): Promise<ReadonlyMap<string, number>> {
+  const getMissing = () => {
+    const missing = new Map<string, KnownModuleKey>();
+    for (const key of keys) {
+      const cacheKey = knownModuleCacheKey(key);
+      if (!knownModuleIdCache.has(cacheKey)) missing.set(cacheKey, key);
+    }
+    return missing;
+  };
+
+  let missing = getMissing();
+  if (missing.size === 0) return knownModuleIdCache;
+
+  // Load all versions of the missing modules
+  const missingNames = new Map<ModuleType, Set<string>>();
+  for (const key of missing.values()) {
+    let names = missingNames.get(key.moduleType);
+    if (!names) missingNames.set(key.moduleType, (names = new Set()));
+    names.add(key.moduleName);
+  }
   const rows = await prisma.knownModule.findMany({
     where: {
-      module_type: moduleType,
-      module_name: moduleName,
+      OR: Array.from(missingNames, ([moduleType, names]) => ({
+        module_type: moduleType,
+        module_name: { in: Array.from(names) },
+      })),
     },
     select: {
       id: true,
+      module_type: true,
+      module_name: true,
       module_version: true,
     },
   });
-  return new Map<string | null, number>(
-    rows.map((r) => [r.module_version || null, r.id])
-  );
-}
+  for (const row of rows) {
+    knownModuleIdCache.set(
+      knownModuleCacheKey({
+        moduleType: row.module_type,
+        moduleName: row.module_name,
+        moduleVersion: row.module_version,
+      }),
+      row.id
+    );
+  }
 
-async function createConnectionModule(
-  prisma: PrismaTransaction,
-  moduleType: ModuleType,
-  moduleName: string,
-  moduleVersion: string | null
-) {
-  const row = await prisma.knownModule.upsert({
-    where: {
-      module_type_module_name_module_version: {
-        module_type: moduleType,
-        module_name: moduleName,
-        module_version: moduleVersion || "",
-      },
-    },
-    create: {
-      module_type: moduleType,
-      module_name: moduleName,
-      module_version: moduleVersion || "",
-    },
-    update: {},
-    select: {
-      id: true,
-    },
-  });
-  console.log("created module", moduleName, moduleVersion, row.id);
-  return row.id;
-}
-interface CommonData {
-  machineId: string;
-  now: Date;
-  utcDay: Date;
+  // Create any which don't exist yet. This is rare, so do them individually.
+  // This also finds names which only differ by the database collation (eg casing), as the unique lookup will match the existing row
+  missing = getMissing();
+  for (const [cacheKey, key] of missing) {
+    const data = {
+      module_type: key.moduleType,
+      module_name: key.moduleName,
+      module_version: key.moduleVersion,
+    };
+    const where = { module_type_module_name_module_version: data };
 
-  existingDailyRowCounts: ReadonlyMap<number, { id: number; count: number }>;
-}
-
-async function updateConnectionModuleCounts(
-  prisma: PrismaTransaction,
-  common: CommonData,
-  moduleRowId: number,
-  instanceCount: number
-) {
-  const existingDaily = common.existingDailyRowCounts.get(moduleRowId);
-  const newDailyMax = Math.max(existingDaily?.count ?? 0, instanceCount);
-
-  await Promise.all([
-    prisma.moduleDailyUsage.upsert({
-      where: {
-        date_user_module: {
-          date: common.utcDay,
-          user_id: common.machineId,
-          module_id: moduleRowId,
-        },
-      },
-      update: {
-        max_count: newDailyMax,
-      },
-      create: {
-        date: common.utcDay,
-        user_id: common.machineId,
-        module_id: moduleRowId,
-        max_count: newDailyMax,
-      },
+    let row = await prisma.knownModule.findUnique({
+      where,
       select: { id: true },
-    }),
-    prisma.moduleUserLastSeen.upsert({
-      where: {
-        user_id_module_id: {
-          user_id: common.machineId,
-          module_id: moduleRowId,
-        },
-      },
-      update: {
-        last_seen: common.now,
-        max_count: instanceCount,
-      },
-      create: {
-        user_id: common.machineId,
-        module_id: moduleRowId,
-        last_seen: common.now,
-        max_count: instanceCount,
-      },
-      select: { id: true },
-    }),
-  ]);
+    });
+    if (!row) {
+      try {
+        row = await prisma.knownModule.create({ data, select: { id: true } });
+        console.log("created module", key.moduleName, key.moduleVersion, row.id);
+      } catch (e) {
+        // Created concurrently by another request
+        if (!isUniqueConstraintError(e)) throw e;
+        row = await prisma.knownModule.findUniqueOrThrow({
+          where,
+          select: { id: true },
+        });
+      }
+    }
+    knownModuleIdCache.set(cacheKey, row.id);
+  }
+
+  return knownModuleIdCache;
 }

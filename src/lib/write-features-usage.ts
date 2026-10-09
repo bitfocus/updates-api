@@ -1,7 +1,8 @@
 import type { DetailedUsageFeaturesType } from "../detailed-usage.js";
 import type { CompanionFeatures, PrismaClient } from "../prisma/client.js";
 import type { UpdatesBodyType } from "../update.js";
-import type { Complete } from "./types.js";
+import { isUniqueConstraintError, type Complete } from "./types.js";
+import { isLastSeenStale } from "./time.js";
 
 export async function writeFeatureUsageData(
   prisma: PrismaClient,
@@ -75,12 +76,39 @@ export async function writeFeatureUsageData(
     enabledBackupRuleCount: features.enabledBackupRuleCount ?? null,
   };
 
-  await prisma.companionFeatures.upsert({
+  const existing = await prisma.companionFeatures.findUnique({
     where: {
       user_id: machineId,
     },
-    update: fullDoc,
-    create: fullDoc,
+  });
+
+  if (!existing) {
+    try {
+      await prisma.companionFeatures.createMany({ data: fullDoc });
+    } catch (e) {
+      // Created concurrently by another request
+      if (!isUniqueConstraintError(e)) throw e;
+      await prisma.companionFeatures.updateMany({
+        where: { user_id: machineId },
+        data: fullDoc,
+      });
+    }
+    return true;
+  }
+
+  // Reports arrive hourly and rarely change, so skip the write unless something changed or updatedAt needs refreshing
+  const unchanged = (Object.keys(fullDoc) as Array<keyof typeof fullDoc>).every(
+    (key) => existing[key] === fullDoc[key]
+  );
+  if (unchanged && !isLastSeenStale(existing.updatedAt, new Date())) {
+    return true;
+  }
+
+  await prisma.companionFeatures.updateMany({
+    where: {
+      id: existing.id,
+    },
+    data: fullDoc,
   });
 
   return true;

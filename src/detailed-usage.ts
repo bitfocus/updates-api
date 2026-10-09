@@ -2,10 +2,7 @@ import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
 import { UpdatesBody } from "./update.js";
 import * as Sentry from "@sentry/node";
-import {
-  writeConnectionsUsage,
-  writeSurfaceModulesUsage,
-} from "./lib/write-modules-usage.js";
+import { writeModulesUsage } from "./lib/write-modules-usage.js";
 import { writeSurfacesUsage } from "./lib/write-surfaces-usage.js";
 import { writeFeatureUsageData } from "./lib/write-features-usage.js";
 
@@ -217,14 +214,12 @@ export function registerDetailedUsageRoutes(
           }),
           catchErrors(writeSurfacesUsage(prisma, id, surfaces), { surfaces }),
           catchErrors(
-            writeSurfaceModulesUsage(prisma, id, surfaceModules ?? []),
+            writeModulesUsage(prisma, id, connections, surfaceModules ?? []),
             {
+              connections,
               surfaceModules,
             }
           ),
-          catchErrors(writeConnectionsUsage(prisma, id, connections), {
-            connections,
-          }),
         ]);
 
         return {

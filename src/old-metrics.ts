@@ -6,7 +6,7 @@ import {
   DetailedUsageSurfaceType,
 } from "./detailed-usage.js";
 import { writeSurfacesUsage } from "./lib/write-surfaces-usage.js";
-import { writeConnectionsUsage } from "./lib/write-modules-usage.js";
+import { writeModulesUsage } from "./lib/write-modules-usage.js";
 
 const OldMetricsResponse = z.object({
   ok: z.boolean().describe("Indicates if the report was received successfully"),
@@ -144,7 +144,7 @@ export function registerOldMetricsRoutes(
         await Promise.all([
           // clearOtherUsageData(prisma, i),
           catchErrors(writeSurfacesUsage(prisma, i, surfaces), { surfaces }),
-          catchErrors(writeConnectionsUsage(prisma, i, connections), {
+          catchErrors(writeModulesUsage(prisma, i, connections, []), {
             connections,
           }),
         ]);

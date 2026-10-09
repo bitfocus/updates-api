@@ -2,7 +2,14 @@ import type { DetailedUsageSurfaceType } from "../detailed-usage.js";
 import type { PrismaClient } from "../prisma/client.js";
 import * as Sentry from "@sentry/node";
 import crypto from "crypto";
+import { getUtcDay, isLastSeenStale } from "./time.js";
 
+/**
+ * Record surface usage.
+ *
+ * To keep database load down, the existing rows are read first and only rows which need changing are written.
+ * Reports arrive hourly, and are usually identical to the previous one.
+ */
 export async function writeSurfacesUsage(
   prisma: PrismaClient,
   machineId: string,
@@ -13,9 +20,11 @@ export async function writeSurfacesUsage(
   // For the detailed usage, we won't decrease the max_counts either.
   if (!surfaces || surfaces.length === 0) return true;
 
+  const now = new Date();
+
   const [usageOk, lastSeenOk] = await Promise.all([
-    writeSurfacesDailyUsage(prisma, machineId, surfaces),
-    writeSurfacesLastSeen(prisma, machineId, surfaces),
+    writeSurfacesDailyUsage(prisma, machineId, now, surfaces),
+    writeSurfacesLastSeen(prisma, machineId, now, surfaces),
   ]);
 
   return usageOk && lastSeenOk;
@@ -24,85 +33,74 @@ export async function writeSurfacesUsage(
 async function writeSurfacesDailyUsage(
   prisma: PrismaClient,
   machineId: string,
+  now: Date,
   surfaces: DetailedUsageSurfaceType[]
 ) {
   try {
-    const now = new Date();
-    const utcDay = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-    ); // midnight UTC
+    const utcDay = getUtcDay(now);
 
-    let ok = true;
+    // Build a map of counts per module
+    const moduleCounts = new Map<string, number>();
+    for (const surface of surfaces) {
+      const safeModuleName = surface.moduleId.slice(0, 128); // Trim to fit DB
+      moduleCounts.set(safeModuleName, (moduleCounts.get(safeModuleName) ?? 0) + 1);
+    }
 
-    // Fetch existing rows, to allow for updating in place
-    const existingCountsRaw = await prisma.surfaceDailyUsage.findMany({
+    const existingRows = await prisma.surfaceDailyUsage.findMany({
       where: {
         date: utcDay,
         user_id: machineId,
       },
       select: {
+        id: true,
         module_name: true,
         max_count: true,
       },
     });
-    const existingCounts = new Map(
-      existingCountsRaw.map((r) => [r.module_name, r.max_count])
-    );
+    const existingByName = new Map(existingRows.map((r) => [r.module_name, r]));
 
-    // Build a map of counts per module
-    const moduleCounts = new Map<string, number>();
-    for (const surface of surfaces) {
-      moduleCounts.set(
-        surface.moduleId,
-        (moduleCounts.get(surface.moduleId) ?? 0) + 1
-      );
+    const newRows: Array<{ module_name: string; max_count: number }> = [];
+    for (const [moduleName, count] of moduleCounts) {
+      const existing = existingByName.get(moduleName);
+      if (!existing) {
+        newRows.push({ module_name: moduleName, max_count: count });
+      } else if (count > existing.max_count) {
+        // The guard avoids lowering a count written concurrently
+        await prisma.surfaceDailyUsage.updateMany({
+          where: { id: existing.id, max_count: { lt: count } },
+          data: { max_count: count },
+        });
+      }
     }
 
-    // Write the counts in a transaction
-    await prisma.$transaction(
-      async (tx) => {
-        // Do in series to minimise connection usage
-        for (const [moduleName, count] of moduleCounts) {
-          try {
-            const existingCount = existingCounts.get(moduleName) ?? 0;
-            const newMax = Math.max(existingCount, count);
+    if (newRows.length > 0) {
+      const res = await prisma.surfaceDailyUsage.createMany({
+        data: newRows.map((r) => ({
+          date: utcDay,
+          user_id: machineId,
+          module_name: r.module_name,
+          max_count: r.max_count,
+        })),
+        skipDuplicates: true,
+      });
 
-            const safeModuleName = moduleName.slice(0, 128); // Trim to fit DB
-
-            await tx.surfaceDailyUsage.upsert({
-              where: {
-                date_user_module: {
-                  date: utcDay,
-                  user_id: machineId,
-                  module_name: safeModuleName,
-                },
-              },
-              update: {
-                max_count: newMax,
-              },
-              create: {
-                date: utcDay,
-                user_id: machineId,
-                module_name: safeModuleName,
-                max_count: newMax,
-              },
-              select: { id: true },
-            });
-          } catch (e) {
-            ok = false;
-
-            Sentry.captureException(e, {
-              extra: { surfaceModule: moduleName, count },
-            });
-          }
+      if (res.count < newRows.length) {
+        // Some rows already existed (created concurrently, or differing only by collation), ensure the counts are applied to them
+        for (const row of newRows) {
+          await prisma.surfaceDailyUsage.updateMany({
+            where: {
+              date: utcDay,
+              user_id: machineId,
+              module_name: row.module_name,
+              max_count: { lt: row.max_count },
+            },
+            data: { max_count: row.max_count },
+          });
         }
-      },
-      {
-        timeout: 10000, // High timeout, due to number of operations
       }
-    );
+    }
 
-    return ok;
+    return true;
   } catch (e) {
     Sentry.captureException(e, { extra: { surfaces } });
     return false;
@@ -112,119 +110,148 @@ async function writeSurfacesDailyUsage(
 async function writeSurfacesLastSeen(
   prisma: PrismaClient,
   machineId: string,
+  now: Date,
   surfaces: DetailedUsageSurfaceType[]
 ) {
-  const now = new Date();
+  try {
+    const reported = new Map<string, SurfaceRow>();
+    const oldSerialsToPrune = new Set<string>();
 
-  let ok = true;
+    for (const surface of surfaces) {
+      const row = {
+        module_name: surface.moduleId.slice(0, 128), // Trim to fit DB
+        surface_serial: surface.id.slice(0, 64), // Trim to fit DB
+        surface_description: translateDescription(surface.description).slice(
+          0,
+          128
+        ), // Trim to fit DB
+      };
+      reported.set(surfaceKey(row), row);
 
-  // Write the last seen updates in a transaction
-  await prisma
-    .$transaction(
-      async (tx) => {
-        const oldSerialsToPrune = new Set<string>();
+      try {
+        // Hash the raw serial
+        oldSerialsToPrune.add(
+          crypto.createHash("md5").update(surface.id).digest("hex")
+        );
 
-        for (const surface of surfaces) {
-          try {
-            const safeModuleName = surface.moduleId.slice(0, 128); // Trim to fit DB
-            const safeSerial = surface.id.slice(0, 64); // Trim to fit DB
-            const safeDescription = translateDescription(
-              surface.description
-            ).slice(0, 128); // Trim to fit DB
+        // The hashed version could be from before we added the prefix scheme
+        const colonIndex = surface.id.indexOf(":");
+        if (colonIndex !== -1) {
+          const suffix = surface.id.slice(colonIndex + 1);
+          oldSerialsToPrune.add(
+            crypto.createHash("md5").update(suffix).digest("hex")
+          );
 
-            try {
-              // Hash the raw serial
-              oldSerialsToPrune.add(
-                crypto.createHash("md5").update(surface.id).digest("hex")
-              );
-
-              // The hashed version could be from before we added the prefix scheme
-              const colonIndex = surface.id.indexOf(":");
-              if (colonIndex !== -1) {
-                const suffix = surface.id.slice(colonIndex + 1);
-                oldSerialsToPrune.add(
-                  crypto.createHash("md5").update(suffix).digest("hex")
-                );
-
-                // Just in case, maybe it was hashed with a satellite- prefix
-                oldSerialsToPrune.add(
-                  crypto
-                    .createHash("md5")
-                    .update(`satellite-${suffix}`)
-                    .digest("hex")
-                );
-              }
-            } catch (e) {
-              Sentry.captureException(e, { extra: { surface } });
-            }
-
-            await tx.surfaceUserLastSeen.upsert({
-              where: {
-                user_id_module_name_surface_serial: {
-                  user_id: machineId,
-                  module_name: safeModuleName,
-                  surface_serial: safeSerial,
-                },
-              },
-              update: {
-                surface_description: safeDescription,
-                last_seen: now,
-              },
-              create: {
-                user_id: machineId,
-                module_name: safeModuleName,
-                surface_serial: safeSerial,
-                surface_description: safeDescription,
-                last_seen: now,
-              },
-              select: { id: true },
-            });
-          } catch (e) {
-            ok = false;
-
-            Sentry.captureException(e, {
-              extra: {
-                surface,
-              },
-            });
-          }
+          // Just in case, maybe it was hashed with a satellite- prefix
+          oldSerialsToPrune.add(
+            crypto
+              .createHash("md5")
+              .update(`satellite-${suffix}`)
+              .digest("hex")
+          );
         }
-
-        // Prune any old serials that were stored with legacy hashing
-        if (oldSerialsToPrune.size > 0) {
-          // Future: This could maybe be more intelligent, by fixing up existing rows (from all users) instead of deleting for the current user.
-          // But that will involve a bunch more queries and complexity, so for now just delete.
-
-          const serialsArr = Array.from(oldSerialsToPrune);
-          try {
-            await tx.surfaceUserLastSeen.deleteMany({
-              where: {
-                user_id: machineId,
-                surface_serial: { in: serialsArr },
-              },
-            });
-          } catch (e) {
-            // If pruning fails for any reason, capture and continue to
-            // ensure we still write the upsert below.
-            Sentry.captureException(e, { extra: { surfaces, serialsArr } });
-          }
-        }
-      },
-      {
-        timeout: 10000, // High timeout, due to number of operations
+      } catch (e) {
+        Sentry.captureException(e, { extra: { surface } });
       }
-    )
-    .catch((e) => {
-      ok = false;
+    }
 
-      Sentry.captureException(e, {
-        extra: {
-          surfaces,
-        },
-      });
+    const existingRows = await prisma.surfaceUserLastSeen.findMany({
+      where: { user_id: machineId },
+      select: {
+        id: true,
+        module_name: true,
+        surface_serial: true,
+        surface_description: true,
+        last_seen: true,
+      },
     });
+    const existingByKey = new Map(existingRows.map((r) => [surfaceKey(r), r]));
 
-  return ok;
+    // Prune any old serials that were stored with legacy hashing
+    // Future: This could maybe be more intelligent, by fixing up existing rows (from all users) instead of deleting for the current user.
+    // But that will involve a bunch more queries and complexity, so for now just delete.
+    const pruneIds = existingRows
+      .filter(
+        (r) =>
+          oldSerialsToPrune.has(r.surface_serial) &&
+          !reported.has(surfaceKey(r))
+      )
+      .map((r) => r.id);
+    if (pruneIds.length > 0) {
+      try {
+        await prisma.surfaceUserLastSeen.deleteMany({
+          where: { id: { in: pruneIds } },
+        });
+      } catch (e) {
+        // If pruning fails for any reason, capture and continue to
+        // ensure we still write the updates below.
+        Sentry.captureException(e, { extra: { surfaces, pruneIds } });
+      }
+    }
+
+    const newRows: SurfaceRow[] = [];
+    const staleIds: number[] = [];
+    for (const [key, row] of reported) {
+      const existing = existingByKey.get(key);
+      if (!existing) {
+        newRows.push(row);
+      } else if (existing.surface_description !== row.surface_description) {
+        await prisma.surfaceUserLastSeen.updateMany({
+          where: { id: existing.id },
+          data: { surface_description: row.surface_description, last_seen: now },
+        });
+      } else if (isLastSeenStale(existing.last_seen, now)) {
+        staleIds.push(existing.id);
+      }
+    }
+
+    if (staleIds.length > 0) {
+      await prisma.surfaceUserLastSeen.updateMany({
+        where: { id: { in: staleIds } },
+        data: { last_seen: now },
+      });
+    }
+
+    if (newRows.length > 0) {
+      const res = await prisma.surfaceUserLastSeen.createMany({
+        data: newRows.map((r) => ({
+          user_id: machineId,
+          ...r,
+          last_seen: now,
+        })),
+        skipDuplicates: true,
+      });
+
+      if (res.count < newRows.length) {
+        // Some rows already existed (created concurrently, or differing only by collation), ensure they reflect this report
+        for (const row of newRows) {
+          await prisma.surfaceUserLastSeen.updateMany({
+            where: {
+              user_id: machineId,
+              module_name: row.module_name,
+              surface_serial: row.surface_serial,
+            },
+            data: { surface_description: row.surface_description, last_seen: now },
+          });
+        }
+      }
+    }
+
+    return true;
+  } catch (e) {
+    Sentry.captureException(e, { extra: { surfaces } });
+    return false;
+  }
+}
+
+interface SurfaceRow {
+  module_name: string;
+  surface_serial: string;
+  surface_description: string;
+}
+
+function surfaceKey(row: { module_name: string; surface_serial: string }) {
+  return JSON.stringify([row.module_name, row.surface_serial]);
 }
 
 function translateDescription(description: string): string {
