@@ -75,6 +75,16 @@ export async function writeFeatureUsageData(
 
     imageLibraryCount: features.imageLibraryCount ?? null,
     enabledBackupRuleCount: features.enabledBackupRuleCount ?? null,
+
+    restApiEnabled: features.restApiEnabled ?? null,
+    apiKeyCount: features.apiKeyCount ?? null,
+    prometheusEnabled: features.prometheusEnabled ?? null,
+
+    pageVariableCount: features.pageVariableCount ?? null,
+    buttonReferenceCount: features.buttonReferenceCount ?? null,
+    presetReferenceCount: features.presetReferenceCount ?? null,
+
+    defaultExportFormat: features.defaultExportFormat ?? null,
   };
 
   const existing = await prisma.companionFeatures.findUnique({

@@ -140,6 +140,45 @@ const DetailedUsageFeatures = z
       .number()
       .describe("Number of enabled backup rules")
       .optional(),
+
+    restApiEnabled: z
+      .boolean()
+      .describe("Indicates if the REST API (/api/v2) is enabled")
+      .optional(),
+    apiKeyCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe("Number of REST API keys configured")
+      .optional(),
+    prometheusEnabled: z
+      .boolean()
+      .describe("Indicates if the Prometheus metrics endpoint is enabled")
+      .optional(),
+
+    pageVariableCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe("Total number of page variables across all pages")
+      .optional(),
+    buttonReferenceCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe("Number of button-reference controls")
+      .optional(),
+    presetReferenceCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe("Number of preset-reference controls")
+      .optional(),
+
+    defaultExportFormat: z
+      .enum(["json", "json-gz", "yaml"])
+      .describe("The default export format")
+      .optional(),
   })
   .describe("Feature usage details");
 

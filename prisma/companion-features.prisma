@@ -63,6 +63,17 @@ model CompanionFeatures {
   imageLibraryCount      Int?
   enabledBackupRuleCount Int?
 
+  // Companion 5.1+
+  restApiEnabled    Boolean?
+  apiKeyCount       Int?
+  prometheusEnabled Boolean?
+
+  pageVariableCount    Int?
+  buttonReferenceCount Int?
+  presetReferenceCount Int?
+
+  defaultExportFormat String? @db.VarChar(16) // json/json-gz/yaml
+
   @@unique([user_id])
   @@index([app_version])
   @@index([updatedAt])
