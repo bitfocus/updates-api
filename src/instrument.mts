@@ -4,9 +4,21 @@ const sentryDsn = process.env.SENTRY_DSN;
 if (sentryDsn) {
   Sentry.init({
     dsn: sentryDsn,
-    // Setting this option to true will send default PII data to Sentry.
-    // For example, automatic IP address collection on events
-    sendDefaultPii: true,
+    // PII (eg IP addresses) is collected by default; tune via `dataCollection` if needed
+    integrations: [
+      Sentry.fastifyIntegration({
+        shouldHandleError(error, _request, reply) {
+          // Client disconnected mid-request, nothing we can do about it
+          if ((error as NodeJS.ErrnoException).code === "ECONNRESET")
+            return false;
+
+          // Errors thrown from hooks (eg rate-limit) carry their status on the error, not yet on the reply
+          const statusCode =
+            (error as { statusCode?: number }).statusCode ?? reply.statusCode;
+          return statusCode >= 500 || statusCode <= 299;
+        },
+      }),
+    ],
   });
   console.log("Sentry initialized");
 } else {
