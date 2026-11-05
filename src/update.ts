@@ -2,7 +2,10 @@ import { z, type APIServer } from "@bitfocusas/api";
 import { PrismaClient } from "./prisma/client.js";
 import semver from "semver";
 import * as Sentry from "@sentry/node";
-import { getLatestReleases } from "./lib/releases.js";
+import {
+  getLatestReleases,
+  getLatestSatelliteReleases,
+} from "./lib/releases.js";
 
 export const UpdatesBody = z.object({
   id: z.string().describe("Unique identifier for the installation"),
@@ -56,6 +59,8 @@ export function registerUpdateRoutes(
 
       if (request.body.app.name === "companion") {
         return prepareCompanionResponse(request.body.app.build);
+      } else if (request.body.app.name === "satellite") {
+        return prepareSatelliteResponse(request.body.app.build);
       } else {
         return {
           ok: true,
@@ -270,6 +275,63 @@ async function prepareCompanionResponse(
       link: "https://companion.free?companion_inapp_beyond",
     };
   }
+}
+
+function prepareSatelliteResponse(appBuild: string): UpdatesResponseType {
+  // Satellite builds are plain semver, eg 3.7.0 for stable or 3.7.0-1234+abcdef0 for beta
+  const parsedVersion = semver.parse(appBuild, { loose: true });
+  if (!parsedVersion) {
+    return {
+      ok: true,
+      message: "Unable to check updates: Invalid version format",
+    };
+  }
+
+  // Stable releases are plain versions, any build with a prerelease suffix is a beta
+  if (parsedVersion.prerelease.length > 0) {
+    return {
+      ok: true,
+      message: "Remember, this is a beta version!",
+      link: "https://user.bitfocus.io/download?satellite_inapp_beta",
+    };
+  }
+
+  // Make sure we know the latest releases
+  const latestReleases = getLatestSatelliteReleases();
+  if (!latestReleases) {
+    return {
+      // Unable to check, encourage client to try again later
+      ok: false,
+      message: "",
+    };
+  }
+
+  const currentStable = latestReleases.currentStable;
+
+  // Up to date, or ahead of the known release (eg cache is stale), so don't suggest a downgrade
+  if (semver.gte(parsedVersion, currentStable, { loose: true })) {
+    return {
+      ok: true,
+      message: "",
+    };
+  }
+
+  if (
+    parsedVersion.major === currentStable.major &&
+    parsedVersion.minor === currentStable.minor
+  ) {
+    return {
+      ok: true,
+      message: `A new bugfix release (v${currentStable.version}) is available.`,
+      link: "https://user.bitfocus.io/download?satellite_inapp_stable",
+    };
+  }
+
+  return {
+    ok: true,
+    message: `A new stable version (v${currentStable.version}) is available.`,
+    link: "https://user.bitfocus.io/download?satellite_inapp_stable",
+  };
 }
 
 async function updateUserDb(

@@ -8,6 +8,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import * as Sentry from "@sentry/node";
 import { registerDetailedUsageRoutes } from "./detailed-usage.js";
 import { registerOldMetricsRoutes } from "./old-metrics.js";
+import { registerSatelliteUsageRoutes } from "./satellite-usage.js";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -62,6 +63,7 @@ app.instance.get("/", (_request, reply) => {
 registerUpdateRoutes(app, prisma);
 registerDetailedUsageRoutes(app, prisma);
 registerOldMetricsRoutes(app, prisma);
+registerSatelliteUsageRoutes(app, prisma);
 
 // Setup graceful shutdown
 app.setupGracefulShutdown();

@@ -14,10 +14,10 @@ export interface LatestReleases {
   oldStable: SemVer;
 }
 
-export async function fetchReleases() {
-  const owner = "bitfocus";
-  const repo = "companion";
-
+export async function fetchReleases(
+  owner: string,
+  repo: string
+): Promise<LatestReleases> {
   const releasesResponse = await octokit.rest.repos.listReleases({
     owner,
     repo,
@@ -102,25 +102,45 @@ export async function fetchReleases() {
 }
 
 let latestReleases: LatestReleases | null = null;
+let latestSatelliteReleases: LatestReleases | null = null;
 
 export function getLatestReleases() {
   return latestReleases;
 }
 
+export function getLatestSatelliteReleases() {
+  return latestSatelliteReleases;
+}
+
 async function doUpdateLatestReleases() {
-  return fetchReleases()
-    .then((releases) => {
-      latestReleases = releases;
-      console.log(
-        "Fetched latest releases: current=%s old=%s",
-        releases.currentStable.version,
-        releases.oldStable.version
-      );
-    })
-    .catch((err) => {
-      console.error("Error fetching latest releases:", err);
-      Sentry.captureException(err, {});
-    });
+  await Promise.all([
+    fetchReleases("bitfocus", "companion")
+      .then((releases) => {
+        latestReleases = releases;
+        console.log(
+          "Fetched latest companion releases: current=%s old=%s",
+          releases.currentStable.version,
+          releases.oldStable.version
+        );
+      })
+      .catch((err) => {
+        console.error("Error fetching latest companion releases:", err);
+        Sentry.captureException(err, {});
+      }),
+    fetchReleases("bitfocus", "companion-satellite")
+      .then((releases) => {
+        latestSatelliteReleases = releases;
+        console.log(
+          "Fetched latest satellite releases: current=%s old=%s",
+          releases.currentStable.version,
+          releases.oldStable.version
+        );
+      })
+      .catch((err) => {
+        console.error("Error fetching latest satellite releases:", err);
+        Sentry.captureException(err, {});
+      }),
+  ]);
 }
 
 setInterval(() => {

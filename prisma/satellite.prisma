@@ -1,0 +1,50 @@
+model SatelliteFeatures {
+  id Int @id @default(autoincrement())
+
+  user_id String @db.VarChar(64) // satellite user id
+
+  // This largely duplicates the User model, but is kept separate due to different update rates
+  app_version String @db.VarChar(16) // satellite version
+  app_build   String @db.VarChar(255) // satellite build number
+
+  os_platform String @db.VarChar(16) // windows/macos/linux etc
+  os_release  String @db.VarChar(48) // os version
+  os_arch     String @db.VarChar(8) // x64/arm64 etc
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Features
+  // Note: new fields MUST be optional, to avoid breaking older clients
+
+  distribution   String @db.VarChar(16) // electron/headless/pi
+  remoteProtocol String @db.VarChar(8) // tcp/ws
+
+  connected           Boolean
+  companionVersion    String? @db.VarChar(64) // version of the connected companion
+  companionApiVersion String? @db.VarChar(16) // satellite api version of the connected companion
+
+  restEnabled Boolean
+  mdnsEnabled Boolean
+
+  @@unique([user_id])
+  @@index([app_version])
+  @@index([updatedAt])
+}
+
+// Enabled plugins are also recorded in ModuleUserLastSeen/ModuleDailyUsage, this tracks the disabled ones too
+model SatellitePluginUsage {
+  id      Int    @id @default(autoincrement())
+  user_id String @db.VarChar(64) // satellite user id
+
+  module_name    String  @db.VarChar(128)
+  module_version String  @db.VarChar(32)
+  enabled        Boolean
+
+  connected_surfaces Int
+
+  last_seen DateTime
+
+  @@unique([user_id, module_name])
+  @@index([module_name, last_seen])
+}
