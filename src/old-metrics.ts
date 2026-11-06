@@ -53,8 +53,11 @@ export function registerOldMetricsRoutes(
 
               surfaces.push({
                 id: String(serial),
-                moduleId: String(info.type) || "unknown",
-                description: String(info.description) || "Unknown",
+                // Missing values are dropped from the JSON, so guard before stringifying
+                moduleId: info.type ? String(info.type) : "unknown",
+                description: info.description
+                  ? String(info.description)
+                  : "Unknown",
               });
             }
           } catch (e) {
