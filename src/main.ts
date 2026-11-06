@@ -34,7 +34,6 @@ const app = new APIServer({
   apiTitle: "Companion Update API",
   apiDescription: "Companion Update API",
   // apiTags: [{ name: "Users", description: "User management endpoints" }],
-  loadEnv: false,
   metricsEnabled: true, // TODO - limit permissions of this?
   rateLimitAllow: process.env.RATE_LIMIT_ALLOW?.split(","),
   trustProxy: process.env.TRUST_PROXY,

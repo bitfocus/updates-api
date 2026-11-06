@@ -9,7 +9,7 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
-    "@bitfocusas/api": "^1.2.2",
+    "@bitfocusas/api": "^2.0.0",
     "@prisma/adapter-mariadb": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "@sentry/node": "^11.10.0",
