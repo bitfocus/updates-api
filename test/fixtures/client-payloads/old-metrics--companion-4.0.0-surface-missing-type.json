@@ -1,0 +1,25 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v4.0.0",
+    "file": "companion/lib/Data/Metrics.ts:56-60",
+    "url": "https://updates.bitfocus.io/companion/metrics"
+  },
+  "notes": "Variant: s entry where type/description are undefined -> JSON.stringify drops them, leaving {}; or empty-string integrationType. Server maps via String(info.type) || 'unknown', which yields the literal string 'undefined' for a missing key (not 'unknown').",
+  "body": {
+    "i": "7hD2kPz9QmXcV4bN1sLwE",
+    "r": 7201.002,
+    "m": {},
+    "mv": {},
+    "d": [
+      "c4ca4238a0b923820dcc509a6f75849b"
+    ],
+    "s": {
+      "emberplus-1234": {},
+      "loupedeck:LDD12345678": {
+        "type": "",
+        "description": "Loupedeck Live"
+      }
+    }
+  }
+}

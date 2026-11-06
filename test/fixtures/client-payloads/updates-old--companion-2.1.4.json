@@ -1,0 +1,66 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v2.1.4",
+    "file": "lib/update.js:61-72,86-121",
+    "url": "https://updates.bitfocus.io/updates"
+  },
+  "notes": "Companion 2.0.0 - 2.1.4. Same flat shape as 1.x. BUILD now from tools/build_writefile.sh as `<package version>-<short hash>-<commit count>` e.g. '2.1.4-b03d4f0-2714' (semver-loose parses as 2.1.4 prerelease, server gives 'very old version'). This variant shows a negative timezone: offset -300 gives tz '--5' (string with two minus signs). macOS example.",
+  "body": {
+    "app_name": "companion",
+    "app_build": "2.1.4-b03d4f0-2714",
+    "arch": "x64",
+    "tz": "--5",
+    "cpus": [
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 812340,
+          "nice": 0,
+          "sys": 270780,
+          "idle": 7311060,
+          "irq": 16246
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 813650,
+          "nice": 0,
+          "sys": 270877,
+          "idle": 7315081,
+          "irq": 16247
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 814960,
+          "nice": 0,
+          "sys": 270974,
+          "idle": 7319102,
+          "irq": 16248
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 816270,
+          "nice": 0,
+          "sys": 271071,
+          "idle": 7323123,
+          "irq": 16249
+        }
+      }
+    ],
+    "platform": "darwin",
+    "release": "19.6.0",
+    "type": "Darwin",
+    "id": "Hk9x_3qPf",
+    "app_version": "2.1.4"
+  }
+}

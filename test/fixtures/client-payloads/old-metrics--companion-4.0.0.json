@@ -1,0 +1,44 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v4.0.0",
+    "file": "companion/lib/Data/Metrics.ts:34-112",
+    "url": "https://updates.bitfocus.io/companion/metrics"
+  },
+  "notes": "Companion 4.0.0 - 4.1.6 (last release with legacy metrics; 4.2.0 replaced it with /companion/detailed-usage and only if detailed_data_collection is enabled). Adds mv (module -> moduleVersionId -> count; versionId '' when null, e.g. dev/legacy modules) and s (RAW surface serial -> {type: integrationType, description: surface.type}). m is the summed counts. r float.",
+  "body": {
+    "i": "7hD2kPz9QmXcV4bN1sLwE",
+    "r": 86412.53,
+    "m": {
+      "bmd-atem": 2,
+      "generic-osc": 1,
+      "studiocoast-vmix": 1
+    },
+    "mv": {
+      "bmd-atem": {
+        "3.14.1": 1,
+        "3.13.0": 1
+      },
+      "generic-osc": {
+        "2.3.0": 1
+      },
+      "studiocoast-vmix": {
+        "": 1
+      }
+    },
+    "d": [
+      "a3f1c9e0b47d2e8f6c5b4a3928170615",
+      "e1d2c3b4a5f60718293a4b5c6d7e8f90"
+    ],
+    "s": {
+      "streamdeck:CL15K1A01234": {
+        "type": "elgato-streamdeck",
+        "description": "Elgato Stream Deck XL"
+      },
+      "B8F1A2C3D4E5": {
+        "type": "satellite",
+        "description": "Satellite Streamdeck: plus"
+      }
+    }
+  }
+}

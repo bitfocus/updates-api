@@ -1,0 +1,22 @@
+{
+  "source": {
+    "repo": "bitfocus/companion-satellite",
+    "tag": "main (1fb55f6, unreleased)",
+    "file": "satellite/src/appInfo.ts:24-42; .github/workflows/node.yaml:78",
+    "url": "https://updates.companion.free/updates"
+  },
+  "notes": "Satellite beta build from main: BUILD_VERSION = `${version}-${count}+${hash}`, injected as package.json version; app.version is the core x.y.z.",
+  "body": {
+    "id": "b2a4e9d0-51c3-4f7e-a0d8-6e9c3b1f2a77",
+    "app": {
+      "name": "satellite",
+      "version": "3.7.0",
+      "build": "3.7.0-794+99a0cae"
+    },
+    "os": {
+      "platform": "win32",
+      "arch": "x64",
+      "release": "10.0.22631"
+    }
+  }
+}

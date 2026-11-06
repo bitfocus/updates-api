@@ -1,0 +1,66 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v4.1.6",
+    "file": "companion/lib/UI/UpdatePayload.ts:4-24; companion/lib/UI/Update.ts:56",
+    "url": "https://updates.bitfocus.io/updates"
+  },
+  "notes": "Companion 3.5.0 - 4.1.6 (last release using the legacy URL/shape). Built-in fetch, JSON.stringify(compileUpdatePayload()). Same keys as 3.2. Negative timezone example: offset -300 -> tz '--5'. 4.2.0 switched to updates.companion.free/updates with the nested body.",
+  "body": {
+    "app_name": "companion",
+    "app_build": "4.1.6+8517-stable-c3a478d4bc",
+    "app_version": "4.1.6",
+    "arch": "x64",
+    "tz": "--5",
+    "cpus": [
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 812340,
+          "nice": 0,
+          "sys": 270780,
+          "idle": 7311060,
+          "irq": 16246
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 813650,
+          "nice": 0,
+          "sys": 270877,
+          "idle": 7315081,
+          "irq": 16247
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 814960,
+          "nice": 0,
+          "sys": 270974,
+          "idle": 7319102,
+          "irq": 16248
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 816270,
+          "nice": 0,
+          "sys": 271071,
+          "idle": 7323123,
+          "irq": 16249
+        }
+      }
+    ],
+    "platform": "linux",
+    "release": "6.8.0-45-generic",
+    "type": "Linux",
+    "id": "7hD2kPz9QmXcV4bN1sLwE"
+  }
+}

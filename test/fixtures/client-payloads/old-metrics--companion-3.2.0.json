@@ -1,0 +1,21 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v3.2.0",
+    "file": "lib/Data/Metrics.js:62-68",
+    "url": "https://updates.bitfocus.io/companion/metrics"
+  },
+  "notes": "Companion 3.2.0 - 3.5.5. Same keys, but r is process.uptime() un-truncated (float seconds).",
+  "body": {
+    "i": "q3ZgLx0bW8pN2mTfY7rKd",
+    "r": 3720.418237916,
+    "m": {
+      "bmd-atem": 2,
+      "companion-module-osc-generic": 1,
+      "ptzoptics-visca": 3
+    },
+    "d": [
+      "5f4dcc3b5aa765d61d8327deb882cf99"
+    ]
+  }
+}

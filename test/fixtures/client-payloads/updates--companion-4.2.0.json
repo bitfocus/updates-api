@@ -1,0 +1,22 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v4.2.0",
+    "file": "companion/lib/UI/UpdatePayload.ts:7-25; companion/lib/UI/Update.ts:74",
+    "url": "https://updates.companion.free/updates"
+  },
+  "notes": "Companion 4.2.0 - 5.1.2 and main (unchanged shape; main uses Hey API client instead of openapi-fetch). openapi-fetch POST, User-Agent 'Companion <version>'. Retries twice (p-retry) on error responses. All fields always strings.",
+  "body": {
+    "id": "V1StGXR8_Z5jdHi6B-myT",
+    "app": {
+      "name": "companion",
+      "version": "4.2.0",
+      "build": "4.2.0+8724-stable-982c8721a8"
+    },
+    "os": {
+      "platform": "win32",
+      "arch": "x64",
+      "release": "10.0.26100"
+    }
+  }
+}

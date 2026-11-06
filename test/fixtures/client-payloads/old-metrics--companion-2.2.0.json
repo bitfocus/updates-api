@@ -1,0 +1,23 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v2.2.0",
+    "file": "lib/metrics.js:41-112",
+    "url": "https://updates.bitfocus.io/companion/metrics"
+  },
+  "notes": "Companion 2.2.0 - 3.1.2 (metrics first added in 2.2.0). Posted to /companion/metrics (no such route now; proxy must map to /companion/old-metrics). r is parseInt(process.uptime()) (integer). m: instance_type -> count of enabled instances (excluding bitfocus-companion). d: md5 hex of each surface serial (minus 'satellite-' prefix, emulator excluded). 2.x hourly, first after 120s. 3.0/3.1 identical except d derived from surface ids.",
+  "body": {
+    "i": "SyLq0tT7b",
+    "r": 7322,
+    "m": {
+      "bmd-atem": 1,
+      "obs-studio": 1,
+      "generic-http": 2,
+      "studiocoast-vmix": 1
+    },
+    "d": [
+      "9c2b0f3e5d1a4c7b8e6f0a1d2c3b4e5f",
+      "0e4d7c1b9a8f6e5d4c3b2a1f0e9d8c7b"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "main",
+    "file": "companion/lib/UI/UpdatePayload.ts",
+    "url": "https://updates.companion.free/updates"
+  },
+  "notes": "Beta/nightly build from the main branch (gitRef 'main'). Server treats buildKind 'main' as beta.",
+  "body": {
+    "id": "Xq1v3bN8kPz0LmC4dR7tW",
+    "app": {
+      "name": "companion",
+      "version": "5.2.0",
+      "build": "5.2.0+10041-main-d18d2fd6a1"
+    },
+    "os": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "release": "25.0.0"
+    }
+  }
+}

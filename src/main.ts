@@ -1,13 +1,9 @@
 // Setup sentry before anything else
 import "./instrument.mjs";
 
-import { APIServer } from "@bitfocusas/api";
-import { registerUpdateRoutes } from "./update.js";
 import { PrismaClient } from "./prisma/client.js";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { registerDetailedUsageRoutes } from "./detailed-usage.js";
-import { registerOldMetricsRoutes } from "./old-metrics.js";
-import { registerSatelliteUsageRoutes } from "./satellite-usage.js";
+import { createApp } from "./app.js";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -28,27 +24,13 @@ const prisma = new PrismaClient({
 });
 
 // Create API server
-const app = new APIServer({
+const app = createApp(prisma, {
   port: 3000,
   host: "::",
-  apiTitle: "Companion Update API",
-  apiDescription: "Companion Update API",
-  // apiTags: [{ name: "Users", description: "User management endpoints" }],
   metricsEnabled: true, // TODO - limit permissions of this?
   rateLimitAllow: process.env.RATE_LIMIT_ALLOW?.split(","),
   trustProxy: process.env.TRUST_PROXY,
 });
-
-// Redirect the root path to the Companion website
-app.instance.get("/", (_request, reply) => {
-  reply.redirect("https://companion.free");
-});
-
-// Register routes
-registerUpdateRoutes(app, prisma);
-registerDetailedUsageRoutes(app, prisma);
-registerOldMetricsRoutes(app, prisma);
-registerSatelliteUsageRoutes(app, prisma);
 
 // Setup graceful shutdown
 app.setupGracefulShutdown();

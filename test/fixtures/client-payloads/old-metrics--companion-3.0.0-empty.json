@@ -1,0 +1,15 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v3.0.0",
+    "file": "lib/Data/Metrics.js:31-77",
+    "url": "https://updates.bitfocus.io/companion/metrics"
+  },
+  "notes": "Variant: fresh install with no connections or surfaces -> m is {} and d is []. Server should still return ok (nothing to write).",
+  "body": {
+    "i": "V1StGXR8_Z5jdHi6B-myT",
+    "r": 120,
+    "m": {},
+    "d": []
+  }
+}

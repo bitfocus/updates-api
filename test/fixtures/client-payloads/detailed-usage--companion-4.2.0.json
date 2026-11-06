@@ -1,0 +1,92 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v4.2.0",
+    "file": "companion/lib/Data/UsageStatistics.ts:91-176,191",
+    "url": "https://updates.companion.free/companion/detailed-usage"
+  },
+  "notes": "Companion 4.2.0 - 4.3.4. Only sent when user config detailed_data_collection is enabled; hourly after 120s, openapi-fetch POST with up to 2 retries. No surfaceModules and none of the 5.0/5.1 optional feature fields. uptime float. surfaces: connected surfaces incl. emulators (id minus 'satellite-'), moduleId/description fall back to ''. connections counts keyed by moduleVersionId ('' when null). From 4.2.x/4.3 connections are filtered to published store modules.",
+  "body": {
+    "id": "V1StGXR8_Z5jdHi6B-myT",
+    "app": {
+      "name": "companion",
+      "version": "4.2.0",
+      "build": "4.2.0+8724-stable-982c8721a8"
+    },
+    "os": {
+      "platform": "win32",
+      "arch": "x64",
+      "release": "10.0.26100"
+    },
+    "uptime": 7322.871,
+    "surfaces": [
+      {
+        "id": "streamdeck:CL15K1A01234",
+        "moduleId": "elgato-streamdeck",
+        "description": "Elgato Stream Deck XL"
+      },
+      {
+        "id": "B8F1A2C3D4E5:0",
+        "moduleId": "satellite",
+        "description": "Satellite Streamdeck: plus"
+      }
+    ],
+    "connections": [
+      {
+        "moduleId": "bmd-atem",
+        "counts": {
+          "3.17.0": 2
+        }
+      },
+      {
+        "moduleId": "generic-osc",
+        "counts": {
+          "2.4.1": 1
+        }
+      },
+      {
+        "moduleId": "studiocoast-vmix",
+        "counts": {
+          "3.9.2": 1,
+          "": 1
+        }
+      },
+      {
+        "moduleId": "obs-studio",
+        "counts": {
+          "3.11.0": 1
+        }
+      }
+    ],
+    "features": {
+      "isBoundToLoopback": false,
+      "hasAdminPassword": false,
+      "hasPincodeLockout": false,
+      "cloudEnabled": false,
+      "httpsEnabled": false,
+      "tcpEnabled": true,
+      "tcpDeprecatedEnabled": false,
+      "udpEnabled": false,
+      "udpDeprecatedEnabled": false,
+      "oscEnabled": true,
+      "oscDeprecatedEnabled": true,
+      "rossTalkEnabled": false,
+      "emberPlusEnabled": false,
+      "artnetEnabled": false,
+      "connectionCount": 6,
+      "pageCount": 12,
+      "buttonCount": 187,
+      "triggerCount": 3,
+      "surfaceGroupCount": 0,
+      "customVariableCount": 4,
+      "expressionVariableCount": 1,
+      "gridSize": {
+        "minCol": 0,
+        "maxCol": 7,
+        "minRow": 0,
+        "maxRow": 3
+      },
+      "connectedSatellites": 1
+    }
+  }
+}

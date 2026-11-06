@@ -1,0 +1,66 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v2.4.2",
+    "file": "lib/update.js:61-72,86-121",
+    "url": "https://updates.bitfocus.io/updates"
+  },
+  "notes": "Companion 2.2.0 - 2.4.2b. Same flat shape. BUILD from tools/lib.mjs generateVersionString: `${version}+${commitCount}-${gitRef}-${shortHash}` where gitRef had only its FIRST non-alnum run replaced (non-global regex), so a tag build (GITHUB_REF_NAME=v2.4.2) gives 'v2-4.2'. Raspberry Pi example (linux/arm). id is the persisted shortid.",
+  "body": {
+    "app_name": "companion",
+    "app_build": "2.4.2+4911-v2-4.2-fcb5a863",
+    "arch": "arm",
+    "tz": "+0",
+    "cpus": [
+      {
+        "model": "ARMv7 Processor rev 3 (v7l)",
+        "speed": 1500,
+        "times": {
+          "user": 220410,
+          "nice": 0,
+          "sys": 73470,
+          "idle": 1983690,
+          "irq": 0
+        }
+      },
+      {
+        "model": "ARMv7 Processor rev 3 (v7l)",
+        "speed": 1500,
+        "times": {
+          "user": 221720,
+          "nice": 0,
+          "sys": 73567,
+          "idle": 1987711,
+          "irq": 1
+        }
+      },
+      {
+        "model": "ARMv7 Processor rev 3 (v7l)",
+        "speed": 1500,
+        "times": {
+          "user": 223030,
+          "nice": 0,
+          "sys": 73664,
+          "idle": 1991732,
+          "irq": 2
+        }
+      },
+      {
+        "model": "ARMv7 Processor rev 3 (v7l)",
+        "speed": 1500,
+        "times": {
+          "user": 224340,
+          "nice": 0,
+          "sys": 73761,
+          "idle": 1995753,
+          "irq": 3
+        }
+      }
+    ],
+    "platform": "linux",
+    "release": "5.10.103-v7l+",
+    "type": "Linux",
+    "id": "SyLq0tT7b",
+    "app_version": "2.4.2"
+  }
+}

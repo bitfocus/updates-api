@@ -1,0 +1,66 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v3.0.0",
+    "file": "lib/UI/Update.js:61-97",
+    "url": "https://updates.bitfocus.io/updates"
+  },
+  "notes": "Companion 3.0.0 - 3.1.2. Rewritten with got.post(json). Same flat keys, but key order changed (app_version now inline). tz still parseInt'd ('+2'). id is machineId: nanoid() for new installs, but an upgraded 2.x install keeps its old shortid machid. Build string now `3.0.0+6049-stable-126f27e8` (stable when gitRef == v<version>).",
+  "body": {
+    "app_name": "companion",
+    "app_build": "3.0.0+6049-stable-126f27e8",
+    "app_version": "3.0.0",
+    "arch": "x64",
+    "tz": "+2",
+    "cpus": [
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor",
+        "speed": 3800,
+        "times": {
+          "user": 402110,
+          "nice": 0,
+          "sys": 134036,
+          "idle": 3618990,
+          "irq": 8042
+        }
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor",
+        "speed": 3800,
+        "times": {
+          "user": 403420,
+          "nice": 0,
+          "sys": 134133,
+          "idle": 3623011,
+          "irq": 8043
+        }
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor",
+        "speed": 3800,
+        "times": {
+          "user": 404730,
+          "nice": 0,
+          "sys": 134230,
+          "idle": 3627032,
+          "irq": 8044
+        }
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor",
+        "speed": 3800,
+        "times": {
+          "user": 406040,
+          "nice": 0,
+          "sys": 134327,
+          "idle": 3631053,
+          "irq": 8045
+        }
+      }
+    ],
+    "platform": "win32",
+    "release": "10.0.19045",
+    "type": "Windows_NT",
+    "id": "V1StGXR8_Z5jdHi6B-myT"
+  }
+}

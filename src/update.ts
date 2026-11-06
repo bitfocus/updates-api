@@ -125,7 +125,7 @@ export function registerUpdateRoutes(
   });
 }
 
-async function prepareCompanionResponse(
+export async function prepareCompanionResponse(
   appBuild: string
 ): Promise<UpdatesResponseType> {
   const parsedBuild = semver.parse(appBuild, { loose: true });
@@ -277,7 +277,7 @@ async function prepareCompanionResponse(
   }
 }
 
-function prepareSatelliteResponse(appBuild: string): UpdatesResponseType {
+export function prepareSatelliteResponse(appBuild: string): UpdatesResponseType {
   // Satellite builds are plain semver, eg 3.7.0 for stable or 3.7.0-1234+abcdef0 for beta
   const parsedVersion = semver.parse(appBuild, { loose: true });
   if (!parsedVersion) {

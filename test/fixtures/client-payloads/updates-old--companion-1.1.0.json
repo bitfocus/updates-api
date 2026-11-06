@@ -1,0 +1,66 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v1.1.0",
+    "file": "lib/update.js:47-58,73-109",
+    "url": "https://updates.bitfocus.io/updates"
+  },
+  "notes": "Companion 1.1.0 - 1.4.0 (first release with an update check is 1.1.0; 1.0.x sent nothing). Raw https.request POST, Content-Type application/json, JSON.stringify(payload). app_build is the raw (untrimmed) BUILD file written by tools/build_writefile.sh as `<git branch>-<short hash>` (e.g. 'master-895bcbe'; a detached-HEAD CI build would give '(HEAD detached at v1.1.0)-895bcbe'). Not semver, so server returns 'Invalid version format'. tz is (offset>=0?'+':'-')+parseInt(offset/60): a string like '+1'; for negative offsets it is double-minus ('--5'). cpus is os.cpus() verbatim. id is a shortid from <config>/machid. app_version is added last, after package.json is read. Posted to /updates (flat body) - needs proxy rewrite to /updates-old.",
+  "body": {
+    "app_name": "companion",
+    "app_build": "master-895bcbe",
+    "arch": "x64",
+    "tz": "+1",
+    "cpus": [
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 812340,
+          "nice": 0,
+          "sys": 270780,
+          "idle": 7311060,
+          "irq": 16246
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 813650,
+          "nice": 0,
+          "sys": 270877,
+          "idle": 7315081,
+          "irq": 16247
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 814960,
+          "nice": 0,
+          "sys": 270974,
+          "idle": 7319102,
+          "irq": 16248
+        }
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+        "speed": 3192,
+        "times": {
+          "user": 816270,
+          "nice": 0,
+          "sys": 271071,
+          "idle": 7323123,
+          "irq": 16249
+        }
+      }
+    ],
+    "platform": "win32",
+    "release": "10.0.17134",
+    "type": "Windows_NT",
+    "id": "rJgS3kq7Z",
+    "app_version": "1.1.0"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "source": {
+    "repo": "bitfocus/companion-satellite",
+    "tag": "main (1fb55f6, unreleased)",
+    "file": "satellite/src/usage/usageStatistics.ts:46-79",
+    "url": "https://updates.companion.free/satellite/detailed-usage"
+  },
+  "notes": "Satellite main (first release ~3.8.0). Only CI builds with detailedUsageEnabled. companionVersion is the connected Companion's appBuild string, companionApiVersion its satellite API version. distribution 'electron'|'installer'|'headless'; remoteProtocol 'tcp'|'ws'.",
+  "body": {
+    "id": "3f6c1a2e-8b7d-4e0a-9c55-2d1f0b7e4a91",
+    "app": {
+      "name": "satellite",
+      "version": "3.8.0",
+      "build": "3.8.0"
+    },
+    "os": {
+      "platform": "linux",
+      "arch": "arm64",
+      "release": "6.12.25+rpt-rpi-v8"
+    },
+    "uptime": 7200.51,
+    "surfacePlugins": [
+      {
+        "moduleId": "elgato-stream-deck",
+        "version": "1.5.2",
+        "enabled": true,
+        "connectedSurfaces": 2
+      },
+      {
+        "moduleId": "loupedeck",
+        "version": "1.1.1",
+        "enabled": true,
+        "connectedSurfaces": 0
+      },
+      {
+        "moduleId": "xkeys",
+        "version": "1.0.2",
+        "enabled": false,
+        "connectedSurfaces": 0
+      }
+    ],
+    "features": {
+      "distribution": "installer",
+      "remoteProtocol": "tcp",
+      "connected": true,
+      "companionVersion": "5.1.2+10019-stable-98d5d4e1a1",
+      "companionApiVersion": "1.10.0",
+      "restEnabled": true,
+      "mdnsEnabled": true
+    }
+  }
+}

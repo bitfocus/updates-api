@@ -1,0 +1,66 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v3.2.0",
+    "file": "lib/UI/Update.js (compilePayload)",
+    "url": "https://updates.bitfocus.io/updates"
+  },
+  "notes": "Companion 3.2.0 - 3.4.x. From 3.2.0 parseInt was dropped: tz is (sign)+offset/60 so half-hour zones give fractional strings like '+5.5' (India) and negative zones still double-minus, e.g. '--3.5'. Still posted to updates.bitfocus.io/updates with the flat body. macOS arm64 example.",
+  "body": {
+    "app_name": "companion",
+    "app_build": "3.2.0+6663-stable-b83f412f",
+    "app_version": "3.2.0",
+    "arch": "arm64",
+    "tz": "+5.5",
+    "cpus": [
+      {
+        "model": "Apple M1",
+        "speed": 24,
+        "times": {
+          "user": 1543210,
+          "nice": 0,
+          "sys": 514403,
+          "idle": 13888890,
+          "irq": 0
+        }
+      },
+      {
+        "model": "Apple M1",
+        "speed": 24,
+        "times": {
+          "user": 1544520,
+          "nice": 0,
+          "sys": 514500,
+          "idle": 13892911,
+          "irq": 1
+        }
+      },
+      {
+        "model": "Apple M1",
+        "speed": 24,
+        "times": {
+          "user": 1545830,
+          "nice": 0,
+          "sys": 514597,
+          "idle": 13896932,
+          "irq": 2
+        }
+      },
+      {
+        "model": "Apple M1",
+        "speed": 24,
+        "times": {
+          "user": 1547140,
+          "nice": 0,
+          "sys": 514694,
+          "idle": 13900953,
+          "irq": 3
+        }
+      }
+    ],
+    "platform": "darwin",
+    "release": "22.6.0",
+    "type": "Darwin",
+    "id": "q3ZgLx0bW8pN2mTfY7rKd"
+  }
+}

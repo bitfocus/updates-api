@@ -1,0 +1,22 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v5.1.2",
+    "file": "companion/lib/UI/UpdatePayload.ts; companion/lib/UI/Update.ts:89",
+    "url": "https://updates.companion.free/updates"
+  },
+  "notes": "Latest release, same shape as 4.2.0. Example of an upgraded install still carrying a legacy shortid machid (ids are not always nanoid).",
+  "body": {
+    "id": "SyLq0tT7b",
+    "app": {
+      "name": "companion",
+      "version": "5.1.2",
+      "build": "5.1.2+10019-stable-98d5d4e1a1"
+    },
+    "os": {
+      "platform": "linux",
+      "arch": "arm64",
+      "release": "6.12.25+rpt-rpi-2712"
+    }
+  }
+}

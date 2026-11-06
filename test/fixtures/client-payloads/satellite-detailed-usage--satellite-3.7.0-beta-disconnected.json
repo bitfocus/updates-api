@@ -1,0 +1,38 @@
+{
+  "source": {
+    "repo": "bitfocus/companion-satellite",
+    "tag": "main (1fb55f6, unreleased)",
+    "file": "satellite/src/usage/usageStatistics.ts:72-73",
+    "url": "https://updates.companion.free/satellite/detailed-usage"
+  },
+  "notes": "Variant: not connected to Companion -> companionVersion/companionApiVersion are null in the client and converted to undefined, so the keys are absent.",
+  "body": {
+    "id": "b2a4e9d0-51c3-4f7e-a0d8-6e9c3b1f2a77",
+    "app": {
+      "name": "satellite",
+      "version": "3.7.0",
+      "build": "3.7.0-794+99a0cae"
+    },
+    "os": {
+      "platform": "win32",
+      "arch": "x64",
+      "release": "10.0.22631"
+    },
+    "uptime": 120.02,
+    "surfacePlugins": [
+      {
+        "moduleId": "elgato-stream-deck",
+        "version": "1.5.2",
+        "enabled": true,
+        "connectedSurfaces": 2
+      }
+    ],
+    "features": {
+      "distribution": "electron",
+      "remoteProtocol": "ws",
+      "connected": false,
+      "restEnabled": false,
+      "mdnsEnabled": true
+    }
+  }
+}

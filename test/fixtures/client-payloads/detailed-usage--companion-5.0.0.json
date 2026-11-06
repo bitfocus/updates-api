@@ -1,0 +1,114 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v5.0.0",
+    "file": "companion/lib/Data/UsageStatistics.ts:102-228",
+    "url": "https://updates.companion.free/companion/detailed-usage"
+  },
+  "notes": "Companion 5.0.0 - 5.0.7. Adds surfaceModules (always present, possibly []) and features buttonDecoration ('topbar'|'border'|'none'), buttonStatusIcons ('show'|'none'), httpEnabled, httpDeprecatedEnabled, satelliteSubscriptionsEnabled, mdnsAnnouncementsEnabled, imageLibraryCount, enabledBackupRuleCount. No tagged release emits buttonStatusIcons 'hide'.",
+  "body": {
+    "id": "q3ZgLx0bW8pN2mTfY7rKd",
+    "app": {
+      "name": "companion",
+      "version": "5.0.0",
+      "build": "5.0.0+9634-stable-d5ae3b4085"
+    },
+    "os": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "release": "24.5.0"
+    },
+    "uptime": 3601.207,
+    "surfaces": [
+      {
+        "id": "streamdeck:CL15K1A01234",
+        "moduleId": "elgato-streamdeck",
+        "description": "Elgato Stream Deck XL"
+      },
+      {
+        "id": "B8F1A2C3D4E5:0",
+        "moduleId": "satellite",
+        "description": "Satellite Streamdeck: plus"
+      }
+    ],
+    "connections": [
+      {
+        "moduleId": "bmd-atem",
+        "counts": {
+          "3.17.0": 2
+        }
+      },
+      {
+        "moduleId": "generic-osc",
+        "counts": {
+          "2.4.1": 1
+        }
+      },
+      {
+        "moduleId": "studiocoast-vmix",
+        "counts": {
+          "3.9.2": 1,
+          "": 1
+        }
+      },
+      {
+        "moduleId": "obs-studio",
+        "counts": {
+          "3.11.0": 1
+        }
+      }
+    ],
+    "surfaceModules": [
+      {
+        "moduleId": "elgato-stream-deck",
+        "counts": {
+          "1.5.2": 1
+        }
+      },
+      {
+        "moduleId": "loupedeck",
+        "counts": {
+          "1.1.1": 1
+        }
+      }
+    ],
+    "features": {
+      "isBoundToLoopback": false,
+      "hasAdminPassword": false,
+      "hasPincodeLockout": false,
+      "cloudEnabled": false,
+      "httpsEnabled": false,
+      "buttonDecoration": "topbar",
+      "buttonStatusIcons": "show",
+      "httpEnabled": true,
+      "httpDeprecatedEnabled": false,
+      "satelliteSubscriptionsEnabled": true,
+      "mdnsAnnouncementsEnabled": true,
+      "tcpEnabled": true,
+      "tcpDeprecatedEnabled": false,
+      "udpEnabled": false,
+      "udpDeprecatedEnabled": false,
+      "oscEnabled": true,
+      "oscDeprecatedEnabled": true,
+      "rossTalkEnabled": false,
+      "emberPlusEnabled": false,
+      "artnetEnabled": false,
+      "connectionCount": 6,
+      "pageCount": 12,
+      "buttonCount": 187,
+      "triggerCount": 3,
+      "surfaceGroupCount": 0,
+      "customVariableCount": 4,
+      "expressionVariableCount": 1,
+      "gridSize": {
+        "minCol": 0,
+        "maxCol": 7,
+        "minRow": 0,
+        "maxRow": 3
+      },
+      "connectedSatellites": 1,
+      "imageLibraryCount": 5,
+      "enabledBackupRuleCount": 1
+    }
+  }
+}

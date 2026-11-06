@@ -1,0 +1,22 @@
+{
+  "source": {
+    "repo": "bitfocus/companion-satellite",
+    "tag": "main (1fb55f6, after v3.7.0; unreleased)",
+    "file": "satellite/src/usage/api.ts:27-41; satellite/src/usage/updateChecker.ts",
+    "url": "https://updates.companion.free/updates"
+  },
+  "notes": "Satellite: no tagged release (<= v3.7.0) talks to the updates API. Introduced on main in 1fb55f6 (2026-11-05), so first release will be ~3.8.0. Only sent by CI builds (package.json updateChannel set). Stable builds: build == version (plain semver). id is a randomUUID persisted in config. User-Agent 'Companion Satellite <build>'.",
+  "body": {
+    "id": "3f6c1a2e-8b7d-4e0a-9c55-2d1f0b7e4a91",
+    "app": {
+      "name": "satellite",
+      "version": "3.8.0",
+      "build": "3.8.0"
+    },
+    "os": {
+      "platform": "linux",
+      "arch": "arm64",
+      "release": "6.12.25+rpt-rpi-v8"
+    }
+  }
+}

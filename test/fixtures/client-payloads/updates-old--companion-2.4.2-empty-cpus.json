@@ -1,0 +1,21 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v2.4.2",
+    "file": "lib/update.js:61-72",
+    "url": "https://updates.bitfocus.io/updates"
+  },
+  "notes": "Variant: os.cpus() can return [] (some ARM kernels/containers without /proc/cpuinfo model info). tz '+0' for UTC (offset 0 -> '+' + 0).",
+  "body": {
+    "app_name": "companion",
+    "app_build": "2.4.2+4911-v2-4.2-fcb5a863",
+    "arch": "arm64",
+    "tz": "+0",
+    "cpus": [],
+    "platform": "linux",
+    "release": "5.15.0-1034-raspi",
+    "type": "Linux",
+    "id": "BJx7ZcnQK",
+    "app_version": "2.4.2"
+  }
+}

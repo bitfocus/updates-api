@@ -1,0 +1,71 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v5.0.7",
+    "file": "companion/lib/Data/UsageStatistics.ts",
+    "url": "https://updates.companion.free/companion/detailed-usage"
+  },
+  "notes": "Variant: upgraded from 4.x with remove_topbar=true -> buttonDecoration 'border'; status icons switched off -> 'none'; surfaceModules [] (store list not loaded).",
+  "body": {
+    "id": "7hD2kPz9QmXcV4bN1sLwE",
+    "app": {
+      "name": "companion",
+      "version": "5.0.7",
+      "build": "5.0.7+9763-stable-cec2f88e6f"
+    },
+    "os": {
+      "platform": "linux",
+      "arch": "x64",
+      "release": "6.8.0-45-generic"
+    },
+    "uptime": 90122.4,
+    "surfaces": [],
+    "connections": [
+      {
+        "moduleId": "bmd-atem",
+        "counts": {
+          "3.17.0": 2
+        }
+      }
+    ],
+    "surfaceModules": [],
+    "features": {
+      "isBoundToLoopback": false,
+      "hasAdminPassword": false,
+      "hasPincodeLockout": false,
+      "cloudEnabled": false,
+      "httpsEnabled": false,
+      "buttonDecoration": "border",
+      "buttonStatusIcons": "none",
+      "httpEnabled": true,
+      "httpDeprecatedEnabled": true,
+      "satelliteSubscriptionsEnabled": true,
+      "mdnsAnnouncementsEnabled": true,
+      "tcpEnabled": true,
+      "tcpDeprecatedEnabled": false,
+      "udpEnabled": false,
+      "udpDeprecatedEnabled": false,
+      "oscEnabled": true,
+      "oscDeprecatedEnabled": true,
+      "rossTalkEnabled": false,
+      "emberPlusEnabled": false,
+      "artnetEnabled": false,
+      "connectionCount": 6,
+      "pageCount": 12,
+      "buttonCount": 187,
+      "triggerCount": 3,
+      "surfaceGroupCount": 0,
+      "customVariableCount": 4,
+      "expressionVariableCount": 1,
+      "gridSize": {
+        "minCol": 0,
+        "maxCol": 7,
+        "minRow": 0,
+        "maxRow": 3
+      },
+      "connectedSatellites": 1,
+      "imageLibraryCount": 0,
+      "enabledBackupRuleCount": 0
+    }
+  }
+}

@@ -6,7 +6,9 @@
     "dev": "tsx --env-file .env --watch src/main.ts",
     "build": "run db:generate && tsc -p tsconfig.json",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "test": "vitest run",
+    "typecheck": "tsc -p test/tsconfig.json"
   },
   "dependencies": {
     "@bitfocusas/api": "^2.0.1",
@@ -27,6 +29,8 @@
     "prisma": "^7.10.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0",
     "zx": "^8.8.5"
   }
 }

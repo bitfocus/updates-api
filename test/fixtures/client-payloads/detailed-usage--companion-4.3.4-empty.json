@@ -1,0 +1,55 @@
+{
+  "source": {
+    "repo": "bitfocus/companion",
+    "tag": "v4.3.4",
+    "file": "companion/lib/Data/UsageStatistics.ts",
+    "url": "https://updates.companion.free/companion/detailed-usage"
+  },
+  "notes": "Variant: module store list not loaded yet (connections filtered to []) and no surfaces connected; loopback-bound with admin password.",
+  "body": {
+    "id": "SyLq0tT7b",
+    "app": {
+      "name": "companion",
+      "version": "4.3.4",
+      "build": "4.3.4+9244-stable-c14e5e3334"
+    },
+    "os": {
+      "platform": "linux",
+      "arch": "x64",
+      "release": "6.1.0-28-amd64"
+    },
+    "uptime": 120.53,
+    "surfaces": [],
+    "connections": [],
+    "features": {
+      "isBoundToLoopback": true,
+      "hasAdminPassword": true,
+      "hasPincodeLockout": false,
+      "cloudEnabled": false,
+      "httpsEnabled": false,
+      "tcpEnabled": true,
+      "tcpDeprecatedEnabled": false,
+      "udpEnabled": false,
+      "udpDeprecatedEnabled": false,
+      "oscEnabled": true,
+      "oscDeprecatedEnabled": true,
+      "rossTalkEnabled": false,
+      "emberPlusEnabled": false,
+      "artnetEnabled": false,
+      "connectionCount": 0,
+      "pageCount": 1,
+      "buttonCount": 0,
+      "triggerCount": 0,
+      "surfaceGroupCount": 0,
+      "customVariableCount": 0,
+      "expressionVariableCount": 0,
+      "gridSize": {
+        "minCol": 0,
+        "maxCol": 7,
+        "minRow": 0,
+        "maxRow": 3
+      },
+      "connectedSatellites": 0
+    }
+  }
+}
