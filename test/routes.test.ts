@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import { makeReleases, releasesState } from "./releases-mock.js";
 import { createTestApp, flushBackgroundWork } from "./app-harness.js";
 
@@ -45,7 +53,7 @@ describe("POST /updates", () => {
     expect(res.json()).toEqual({
       ok: true,
       message: "A new bugfix release (v4.2.3) is available.",
-      link: "https://user.bitfocus.io/download?companion_inapp_stable",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
     });
 
     await flushBackgroundWork();
@@ -96,7 +104,7 @@ describe("POST /updates", () => {
     expect(res.json()).toEqual({
       ok: true,
       message: "A new stable version (v3.7.2) is available.",
-      link: "https://user.bitfocus.io/download?satellite_inapp_stable",
+      link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
     });
   });
 
@@ -112,7 +120,11 @@ describe("POST /updates", () => {
   test("clamps long values to the column lengths", async () => {
     await post("/updates", {
       ...companionUpdateBody,
-      os: { platform: "p".repeat(40), arch: "a".repeat(40), release: "r".repeat(100) },
+      os: {
+        platform: "p".repeat(40),
+        arch: "a".repeat(40),
+        release: "r".repeat(100),
+      },
     });
     await flushBackgroundWork();
     expect((ctx.db.calls[0].args as any).update).toMatchObject({
@@ -150,7 +162,7 @@ describe("POST /updates-old", () => {
     expect(res.json()).toEqual({
       message:
         "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
-      link: "https://user.bitfocus.io/download?companion_inapp_ancient",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_ancient",
     });
   });
 });
@@ -163,16 +175,22 @@ describe("POST /companion/old-metrics", () => {
       m: {},
       mv: {},
       // Companion 4.0 drops undefined type and description from the JSON
-      s: { "emberplus-1234": {}, "streamdeck:CL15K1A01234": { type: "elgato-streamdeck" } },
+      s: {
+        "emberplus-1234": {},
+        "streamdeck:CL15K1A01234": { type: "elgato-streamdeck" },
+      },
     });
     expect(res.json()).toEqual({ ok: true });
 
     const dailyUsage = ctx.db.calls.find(
-      (c) => c.model === "surfaceDailyUsage" && c.method === "createMany"
+      (c) => c.model === "surfaceDailyUsage" && c.method === "createMany",
     );
     expect((dailyUsage?.args as any).data).toEqual([
       expect.objectContaining({ module_name: "unknown", max_count: 1 }),
-      expect.objectContaining({ module_name: "elgato-streamdeck", max_count: 1 }),
+      expect.objectContaining({
+        module_name: "elgato-streamdeck",
+        max_count: 1,
+      }),
     ]);
     expect(JSON.stringify(ctx.db.calls)).not.toContain('"undefined"');
   });

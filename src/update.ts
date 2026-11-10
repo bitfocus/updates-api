@@ -26,7 +26,7 @@ const UpdatesResponse = z.object({
   ok: z
     .boolean()
     .describe(
-      "Indicates if the check was successful, or should be retried later"
+      "Indicates if the check was successful, or should be retried later",
     ),
   message: z.string().describe("Update message"),
   message2: z
@@ -39,7 +39,7 @@ type UpdatesResponseType = z.infer<typeof UpdatesResponse>;
 
 export function registerUpdateRoutes(
   app: APIServer,
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): void {
   app.createEndpoint({
     method: "POST",
@@ -126,7 +126,7 @@ export function registerUpdateRoutes(
 }
 
 export async function prepareCompanionResponse(
-  appBuild: string
+  appBuild: string,
 ): Promise<UpdatesResponseType> {
   const parsedBuild = semver.parse(appBuild, { loose: true });
   if (!parsedBuild) {
@@ -142,14 +142,14 @@ export async function prepareCompanionResponse(
       ok: true,
       message:
         "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
-      link: "https://user.bitfocus.io/download?companion_inapp_ancient",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_ancient",
     };
   }
 
   // Known build format must be like: 3.3.1+7001-stable-ee7c3daa
   // Accept optional leading `v`, require core semver, a `+` build number, then `-stable-<hash>` or `-beta-<hash>`
   const knownBuildMatch = appBuild.match(
-    /^v?(\d+)\.(\d+)\.(\d+)\+(\d+)-(.+)-([0-9a-fA-F]{7,40})$/
+    /^v?(\d+)\.(\d+)\.(\d+)\+(\d+)-(.+)-([0-9a-fA-F]{7,40})$/,
   );
   if (!knownBuildMatch) {
     return {
@@ -179,7 +179,7 @@ export async function prepareCompanionResponse(
     return {
       ok: true,
       message: `This version of Companion is outdated and no longer supported. Please update to the latest version v${latestReleases.currentStable}.`,
-      link: "https://user.bitfocus.io/download?companion_inapp_obsolete",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_obsolete",
     };
   }
 
@@ -204,7 +204,7 @@ export async function prepareCompanionResponse(
         return {
           ok: true,
           message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
-          link: "https://user.bitfocus.io/download?companion_inapp_stable",
+          link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
         };
       }
 
@@ -212,7 +212,7 @@ export async function prepareCompanionResponse(
       return {
         ok: true,
         message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
-        link: "https://user.bitfocus.io/download?companion_inapp_stable",
+        link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
       };
     }
 
@@ -236,7 +236,7 @@ export async function prepareCompanionResponse(
         return {
           ok: true,
           message: `A new bugfix release (v${latestReleases.currentStable.version}) is available.`,
-          link: "https://user.bitfocus.io/download?companion_inapp_stable",
+          link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
         };
       }
 
@@ -255,7 +255,7 @@ export async function prepareCompanionResponse(
     return {
       ok: true,
       message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
-      link: "https://user.bitfocus.io/download?companion_inapp_stable",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
     };
   } else if (isBeta) {
     // Beta
@@ -263,7 +263,7 @@ export async function prepareCompanionResponse(
     return {
       ok: true,
       message: "Remember, this is a beta version!",
-      link: "https://user.bitfocus.io/download?companion_inapp_beta",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_beta",
     };
   } else {
     // Experimental
@@ -277,7 +277,9 @@ export async function prepareCompanionResponse(
   }
 }
 
-export function prepareSatelliteResponse(appBuild: string): UpdatesResponseType {
+export function prepareSatelliteResponse(
+  appBuild: string,
+): UpdatesResponseType {
   // Satellite builds are plain semver, eg 3.7.0 for stable or 3.7.0-1234+abcdef0 for beta
   const parsedVersion = semver.parse(appBuild, { loose: true });
   if (!parsedVersion) {
@@ -292,7 +294,7 @@ export function prepareSatelliteResponse(appBuild: string): UpdatesResponseType 
     return {
       ok: true,
       message: "Remember, this is a beta version!",
-      link: "https://user.bitfocus.io/download?satellite_inapp_beta",
+      link: "https://bitfocus.io/account/downloads?satellite_inapp_beta",
     };
   }
 
@@ -323,20 +325,20 @@ export function prepareSatelliteResponse(appBuild: string): UpdatesResponseType 
     return {
       ok: true,
       message: `A new bugfix release (v${currentStable.version}) is available.`,
-      link: "https://user.bitfocus.io/download?satellite_inapp_stable",
+      link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
     };
   }
 
   return {
     ok: true,
     message: `A new stable version (v${currentStable.version}) is available.`,
-    link: "https://user.bitfocus.io/download?satellite_inapp_stable",
+    link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
   };
 }
 
 async function updateUserDb(
   prisma: PrismaClient,
-  userInfo: z.infer<typeof UpdatesBody>
+  userInfo: z.infer<typeof UpdatesBody>,
 ): Promise<void> {
   const appName = userInfo.app.name.slice(0, 16);
 

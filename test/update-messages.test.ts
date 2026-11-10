@@ -18,23 +18,23 @@ describe("prepareCompanionResponse", () => {
   const NEW_STABLE = {
     ok: true,
     message: "A new stable version (v4.2.3) is available.",
-    link: "https://user.bitfocus.io/download?companion_inapp_stable",
+    link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
   };
   const BUGFIX = {
     ok: true,
     message: "A new bugfix release (v4.2.3) is available.",
-    link: "https://user.bitfocus.io/download?companion_inapp_stable",
+    link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
   };
   const OBSOLETE = {
     ok: true,
     message:
       "This version of Companion is outdated and no longer supported. Please update to the latest version v4.2.3.",
-    link: "https://user.bitfocus.io/download?companion_inapp_obsolete",
+    link: "https://bitfocus.io/account/downloads?companion_inapp_obsolete",
   };
   const BETA = {
     ok: true,
     message: "Remember, this is a beta version!",
-    link: "https://user.bitfocus.io/download?companion_inapp_beta",
+    link: "https://bitfocus.io/account/downloads?companion_inapp_beta",
   };
   const EXPERIMENTAL = {
     ok: true,
@@ -46,7 +46,11 @@ describe("prepareCompanionResponse", () => {
     // Current stable branch
     ["latest stable", "4.2.3+8001-stable-ee7c3daa", UP_TO_DATE],
     ["leading v", "v4.2.3+8001-stable-ee7c3daa", UP_TO_DATE],
-    ["full length hash", "4.2.3+8001-stable-ee7c3daaee7c3daaee7c3daaee7c3daaee7c3daa", UP_TO_DATE],
+    [
+      "full length hash",
+      "4.2.3+8001-stable-ee7c3daaee7c3daaee7c3daaee7c3daaee7c3daa",
+      UP_TO_DATE,
+    ],
     ["behind on current branch", "4.2.1+7990-stable-ee7c3daa", BUGFIX],
     ["first release of current branch", "4.2.0+7980-stable-ee7c3daa", BUGFIX],
     ["stable-<branch> build kind", "4.2.1+7990-stable-4.2-ee7c3daa", BUGFIX],
@@ -69,7 +73,11 @@ describe("prepareCompanionResponse", () => {
     ["beta", "4.3.0+8200-beta-ee7c3daa", BETA],
     ["main branch build", "4.3.0+8200-main-ee7c3daa", BETA],
     ["beta of the current branch", "4.2.4+8020-beta-ee7c3daa", BETA],
-    ["feature branch build", "4.3.0+8200-feat-some-thing-ee7c3daa", EXPERIMENTAL],
+    [
+      "feature branch build",
+      "4.3.0+8200-feat-some-thing-ee7c3daa",
+      EXPERIMENTAL,
+    ],
     ["unrecognised build kind", "4.2.3+8001-nightly-ee7c3daa", EXPERIMENTAL],
   ])("%s (%s)", async (_name, build, expected) => {
     expect(await prepareCompanionResponse(build)).toEqual(expected);
@@ -102,18 +110,17 @@ describe("prepareCompanionResponse", () => {
     });
   });
 
-  test.each([
-    ["2.4.2-a8b2c3d"],
-    ["2.1.0+2200-stable-a8b2c3d"],
-    ["1.4.0"],
-  ])("ancient version (%s)", async (build) => {
-    expect(await prepareCompanionResponse(build)).toEqual({
-      ok: true,
-      message:
-        "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
-      link: "https://user.bitfocus.io/download?companion_inapp_ancient",
-    });
-  });
+  test.each([["2.4.2-a8b2c3d"], ["2.1.0+2200-stable-a8b2c3d"], ["1.4.0"]])(
+    "ancient version (%s)",
+    async (build) => {
+      expect(await prepareCompanionResponse(build)).toEqual({
+        ok: true,
+        message:
+          "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
+        link: "https://bitfocus.io/account/downloads?companion_inapp_ancient",
+      });
+    },
+  );
 
   test("ancient versions don't depend on the releases being known", async () => {
     releasesState.companion = null;
@@ -125,24 +132,31 @@ describe("prepareCompanionResponse", () => {
   test.each([
     ["stable", "4.2.3+8001-stable-ee7c3daa"],
     ["beta", "4.3.0+8200-beta-ee7c3daa"],
-  ])("asks the client to retry when releases are unknown (%s)", async (_name, build) => {
-    releasesState.companion = null;
-    expect(await prepareCompanionResponse(build)).toEqual({
-      ok: false,
-      message: "",
-    });
-  });
+  ])(
+    "asks the client to retry when releases are unknown (%s)",
+    async (_name, build) => {
+      releasesState.companion = null;
+      expect(await prepareCompanionResponse(build)).toEqual({
+        ok: false,
+        message: "",
+      });
+    },
+  );
 
   test("old stable on a previous major", async () => {
     releasesState.companion = makeReleases("5.0.1", "4.2.3");
 
-    expect(await prepareCompanionResponse("4.2.1+7990-stable-ee7c3daa")).toEqual({
+    expect(
+      await prepareCompanionResponse("4.2.1+7990-stable-ee7c3daa"),
+    ).toEqual({
       ok: true,
       message: "A new stable version (v5.0.1) is available.",
-      link: "https://user.bitfocus.io/download?companion_inapp_stable",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
     });
-    expect(await prepareCompanionResponse("4.1.5+7850-stable-ee7c3daa")).toMatchObject({
-      link: "https://user.bitfocus.io/download?companion_inapp_obsolete",
+    expect(
+      await prepareCompanionResponse("4.1.5+7850-stable-ee7c3daa"),
+    ).toMatchObject({
+      link: "https://bitfocus.io/account/downloads?companion_inapp_obsolete",
     });
   });
 });
@@ -155,17 +169,17 @@ describe("prepareSatelliteResponse", () => {
   const NEW_STABLE = {
     ok: true,
     message: "A new stable version (v3.7.2) is available.",
-    link: "https://user.bitfocus.io/download?satellite_inapp_stable",
+    link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
   };
   const BUGFIX = {
     ok: true,
     message: "A new bugfix release (v3.7.2) is available.",
-    link: "https://user.bitfocus.io/download?satellite_inapp_stable",
+    link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
   };
   const BETA = {
     ok: true,
     message: "Remember, this is a beta version!",
-    link: "https://user.bitfocus.io/download?satellite_inapp_beta",
+    link: "https://bitfocus.io/account/downloads?satellite_inapp_beta",
   };
 
   test.each([
@@ -189,7 +203,7 @@ describe("prepareSatelliteResponse", () => {
         ok: true,
         message: "Unable to check updates: Invalid version format",
       });
-    }
+    },
   );
 
   test("betas don't depend on the releases being known", () => {
