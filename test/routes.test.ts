@@ -52,6 +52,8 @@ describe("POST /updates", () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({
       ok: true,
+      type: "update",
+      version: "4.2.3",
       message: "A new bugfix release (v4.2.3) is available.",
       link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
     });
@@ -103,6 +105,8 @@ describe("POST /updates", () => {
     });
     expect(res.json()).toEqual({
       ok: true,
+      type: "update",
+      version: "3.7.2",
       message: "A new stable version (v3.7.2) is available.",
       link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
     });
@@ -114,7 +118,7 @@ describe("POST /updates", () => {
       app: { name: "something-else", version: "1.0.0", build: "1.0.0" },
     });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ ok: true, message: "" });
+    expect(res.json()).toEqual({ ok: true, type: "none", message: "" });
   });
 
   test("clamps long values to the column lengths", async () => {

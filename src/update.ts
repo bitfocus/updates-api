@@ -22,7 +22,7 @@ export const UpdatesBody = z.object({
 });
 export type UpdatesBodyType = z.infer<typeof UpdatesBody>;
 
-const UpdatesResponse = z.object({
+const UpdatesResponseBase = z.object({
   ok: z
     .boolean()
     .describe(
@@ -35,6 +35,19 @@ const UpdatesResponse = z.object({
     .describe("Additional message (Supported since Companion 4.2)"),
   link: z.string().url().optional().describe("Download URL"),
 });
+const UpdatesResponse = z.discriminatedUnion("type", [
+  UpdatesResponseBase.extend({
+    type: z.literal("update").describe("A newer version is available"),
+    version: z.string().describe("The version which is available"),
+  }),
+  UpdatesResponseBase.extend({
+    type: z
+      .enum(["none", "beta", "info"])
+      .describe(
+        "none: nothing to show. beta: this is a beta or experimental build. info: anything else, eg the version could not be checked",
+      ),
+  }),
+]);
 type UpdatesResponseType = z.infer<typeof UpdatesResponse>;
 
 export function registerUpdateRoutes(
@@ -64,9 +77,10 @@ export function registerUpdateRoutes(
       } else {
         return {
           ok: true,
+          type: "none",
           message: "",
           // message: "Unknown application",
-        };
+        } satisfies UpdatesResponseType;
       }
     },
   });
@@ -132,17 +146,28 @@ export async function prepareCompanionResponse(
   if (!parsedBuild) {
     return {
       ok: true,
+      type: "info",
       message: "Unable to check updates: Invalid version format",
     };
   }
 
   // Very old 2.x versions, interpreting stable vs beta is different and not worth supporting
   if (parsedBuild.major < 3) {
-    return {
+    const ancientResponse = {
       ok: true,
       message:
         "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
       link: "https://bitfocus.io/account/downloads?companion_inapp_ancient",
+    };
+
+    // Still nag when the latest version is unknown, as the legacy endpoint can't ask the client to retry
+    const latestReleases = getLatestReleases();
+    if (!latestReleases) return { ...ancientResponse, type: "info" };
+
+    return {
+      ...ancientResponse,
+      type: "update",
+      version: latestReleases.currentStable.version,
     };
   }
 
@@ -154,6 +179,7 @@ export async function prepareCompanionResponse(
   if (!knownBuildMatch) {
     return {
       ok: true,
+      type: "info",
       message: "Unable to check updates: Unknown build format",
     };
   }
@@ -168,6 +194,7 @@ export async function prepareCompanionResponse(
     return {
       // Unable to check, encourage client to try again later
       ok: false,
+      type: "none",
       message: "",
     };
   }
@@ -178,6 +205,8 @@ export async function prepareCompanionResponse(
   if (semver.lt(parsedBuild, oldStableMinorBranch, { loose: true })) {
     return {
       ok: true,
+      type: "update",
+      version: latestReleases.currentStable.version,
       message: `This version of Companion is outdated and no longer supported. Please update to the latest version v${latestReleases.currentStable}.`,
       link: "https://bitfocus.io/account/downloads?companion_inapp_obsolete",
     };
@@ -203,6 +232,8 @@ export async function prepareCompanionResponse(
         // TODO - also report a newer oldstable?
         return {
           ok: true,
+          type: "update",
+          version: latestReleases.currentStable.version,
           message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
           link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
         };
@@ -211,6 +242,8 @@ export async function prepareCompanionResponse(
       // userSem >= latestReleases.oldStable
       return {
         ok: true,
+        type: "update",
+        version: latestReleases.currentStable.version,
         message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
         link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
       };
@@ -226,6 +259,7 @@ export async function prepareCompanionResponse(
       ) {
         return {
           ok: true,
+          type: "none",
           message: "",
         };
       }
@@ -235,6 +269,8 @@ export async function prepareCompanionResponse(
       ) {
         return {
           ok: true,
+          type: "update",
+          version: latestReleases.currentStable.version,
           message: `A new bugfix release (v${latestReleases.currentStable.version}) is available.`,
           link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
         };
@@ -247,6 +283,7 @@ export async function prepareCompanionResponse(
     if (semver.gt(parsedBuild, latestReleases.currentStable, { loose: true })) {
       return {
         ok: true,
+        type: "none",
         message: "",
       };
     }
@@ -254,6 +291,8 @@ export async function prepareCompanionResponse(
     // Default assumption for any other stable case: assume on current stable branch and not latest
     return {
       ok: true,
+      type: "update",
+      version: latestReleases.currentStable.version,
       message: `A new stable version (v${latestReleases.currentStable.version}) is available.`,
       link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
     };
@@ -262,6 +301,7 @@ export async function prepareCompanionResponse(
 
     return {
       ok: true,
+      type: "beta",
       message: "Remember, this is a beta version!",
       link: "https://bitfocus.io/account/downloads?companion_inapp_beta",
     };
@@ -270,6 +310,7 @@ export async function prepareCompanionResponse(
 
     return {
       ok: true,
+      type: "beta",
       message:
         "EXPERIMENTAL: Thank you for testing these experimental features!",
       link: "https://companion.free?companion_inapp_beyond",
@@ -285,6 +326,7 @@ export function prepareSatelliteResponse(
   if (!parsedVersion) {
     return {
       ok: true,
+      type: "info",
       message: "Unable to check updates: Invalid version format",
     };
   }
@@ -293,6 +335,7 @@ export function prepareSatelliteResponse(
   if (parsedVersion.prerelease.length > 0) {
     return {
       ok: true,
+      type: "beta",
       message: "Remember, this is a beta version!",
       link: "https://bitfocus.io/account/downloads?satellite_inapp_beta",
     };
@@ -304,6 +347,7 @@ export function prepareSatelliteResponse(
     return {
       // Unable to check, encourage client to try again later
       ok: false,
+      type: "none",
       message: "",
     };
   }
@@ -314,6 +358,7 @@ export function prepareSatelliteResponse(
   if (semver.gte(parsedVersion, currentStable, { loose: true })) {
     return {
       ok: true,
+      type: "none",
       message: "",
     };
   }
@@ -324,6 +369,8 @@ export function prepareSatelliteResponse(
   ) {
     return {
       ok: true,
+      type: "update",
+      version: currentStable.version,
       message: `A new bugfix release (v${currentStable.version}) is available.`,
       link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
     };
@@ -331,6 +378,8 @@ export function prepareSatelliteResponse(
 
   return {
     ok: true,
+    type: "update",
+    version: currentStable.version,
     message: `A new stable version (v${currentStable.version}) is available.`,
     link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
   };

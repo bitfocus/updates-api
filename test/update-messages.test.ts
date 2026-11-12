@@ -7,7 +7,7 @@ import {
 
 vi.mock("../src/lib/releases.js", () => import("./releases-mock.js"));
 
-const UP_TO_DATE = { ok: true, message: "" };
+const UP_TO_DATE = { ok: true, type: "none", message: "" };
 
 describe("prepareCompanionResponse", () => {
   // currentStable 4.2.3, oldStable 4.1.5: anything below 4.1.0 is obsolete
@@ -17,27 +17,35 @@ describe("prepareCompanionResponse", () => {
 
   const NEW_STABLE = {
     ok: true,
+    type: "update",
+    version: "4.2.3",
     message: "A new stable version (v4.2.3) is available.",
     link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
   };
   const BUGFIX = {
     ok: true,
+    type: "update",
+    version: "4.2.3",
     message: "A new bugfix release (v4.2.3) is available.",
     link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
   };
   const OBSOLETE = {
     ok: true,
+    type: "update",
+    version: "4.2.3",
     message:
       "This version of Companion is outdated and no longer supported. Please update to the latest version v4.2.3.",
     link: "https://bitfocus.io/account/downloads?companion_inapp_obsolete",
   };
   const BETA = {
     ok: true,
+    type: "beta",
     message: "Remember, this is a beta version!",
     link: "https://bitfocus.io/account/downloads?companion_inapp_beta",
   };
   const EXPERIMENTAL = {
     ok: true,
+    type: "beta",
     message: "EXPERIMENTAL: Thank you for testing these experimental features!",
     link: "https://companion.free?companion_inapp_beyond",
   };
@@ -91,6 +99,7 @@ describe("prepareCompanionResponse", () => {
     ])("%s (%s)", async (_name, build) => {
       expect(await prepareCompanionResponse(build)).toEqual({
         ok: true,
+        type: "info",
         message: "Unable to check updates: Invalid version format",
       });
     });
@@ -105,6 +114,7 @@ describe("prepareCompanionResponse", () => {
     ])("%s (%s)", async (_name, build) => {
       expect(await prepareCompanionResponse(build)).toEqual({
         ok: true,
+        type: "info",
         message: "Unable to check updates: Unknown build format",
       });
     });
@@ -115,6 +125,8 @@ describe("prepareCompanionResponse", () => {
     async (build) => {
       expect(await prepareCompanionResponse(build)).toEqual({
         ok: true,
+        type: "update",
+        version: "4.2.3",
         message:
           "This is a very old version of Companion. Companion has improved a lot, we strongly recommend updating",
         link: "https://bitfocus.io/account/downloads?companion_inapp_ancient",
@@ -126,6 +138,8 @@ describe("prepareCompanionResponse", () => {
     releasesState.companion = null;
     expect(await prepareCompanionResponse("2.4.2-a8b2c3d")).toMatchObject({
       ok: true,
+      type: "info",
+      link: "https://bitfocus.io/account/downloads?companion_inapp_ancient",
     });
   });
 
@@ -138,6 +152,7 @@ describe("prepareCompanionResponse", () => {
       releasesState.companion = null;
       expect(await prepareCompanionResponse(build)).toEqual({
         ok: false,
+        type: "none",
         message: "",
       });
     },
@@ -150,6 +165,8 @@ describe("prepareCompanionResponse", () => {
       await prepareCompanionResponse("4.2.1+7990-stable-ee7c3daa"),
     ).toEqual({
       ok: true,
+      type: "update",
+      version: "5.0.1",
       message: "A new stable version (v5.0.1) is available.",
       link: "https://bitfocus.io/account/downloads?companion_inapp_stable",
     });
@@ -168,16 +185,21 @@ describe("prepareSatelliteResponse", () => {
 
   const NEW_STABLE = {
     ok: true,
+    type: "update",
+    version: "3.7.2",
     message: "A new stable version (v3.7.2) is available.",
     link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
   };
   const BUGFIX = {
     ok: true,
+    type: "update",
+    version: "3.7.2",
     message: "A new bugfix release (v3.7.2) is available.",
     link: "https://bitfocus.io/account/downloads?satellite_inapp_stable",
   };
   const BETA = {
     ok: true,
+    type: "beta",
     message: "Remember, this is a beta version!",
     link: "https://bitfocus.io/account/downloads?satellite_inapp_beta",
   };
@@ -201,6 +223,7 @@ describe("prepareSatelliteResponse", () => {
     (build) => {
       expect(prepareSatelliteResponse(build)).toEqual({
         ok: true,
+        type: "info",
         message: "Unable to check updates: Invalid version format",
       });
     },
@@ -215,6 +238,7 @@ describe("prepareSatelliteResponse", () => {
     releasesState.satellite = null;
     expect(prepareSatelliteResponse("3.7.2")).toEqual({
       ok: false,
+      type: "none",
       message: "",
     });
   });
